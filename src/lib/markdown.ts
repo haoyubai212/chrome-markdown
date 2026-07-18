@@ -27,7 +27,7 @@ export async function renderMarkdown(markdown: string): Promise<{ html: string; 
         return hljs.highlight(code, { language: resolved }).value
       },
     }),
-    markedKatex({ throwOnError: false, nonStandard: true }),
+    markedKatex({ throwOnError: false, nonStandard: true, strict: false }),
     { gfm: true, breaks: false },
   )
 

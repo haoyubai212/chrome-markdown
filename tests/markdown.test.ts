@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderMarkdown } from '../src/lib/markdown'
 
 describe('Markdown renderer', () => {
@@ -17,5 +17,13 @@ describe('Markdown renderer', () => {
     expect(result.html).not.toContain('javascript:')
     expect(result.html).toContain('language-ts')
     expect(result.html).toContain('hljs')
+  })
+
+  it('renders Unicode text in math without reporting KaTeX compatibility warnings', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const result = await renderMarkdown('$x（中文）$')
+    expect(result.html).toContain('katex')
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })

@@ -1,7 +1,7 @@
 {
   "name": "local-md-reader",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run --environment jsdom",
     "test:watch": "vitest --environment jsdom",
-    "package": "npm run build && cd dist && zip -qr ../local-md-reader-0.1.2.zip ."
+    "package": "npm run build && cd dist && zip -qr ../local-md-reader-0.1.3.zip ."
   },
   "dependencies": {
     "dompurify": "^3.3.0",

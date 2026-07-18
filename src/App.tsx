@@ -8,10 +8,13 @@ import { DEMO_TREE, getDemoDocument } from './lib/demo'
 import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from './lib/filesystem'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
+import { loadCapturedMarkdown, toLoadedDocument } from './lib/singleFile'
 import { getRootHandle, loadLastPath, loadSettings, saveLastPath, saveRootHandle, saveSettings } from './lib/storage'
 import type { Heading, LoadedDocument, Settings, TreeNode } from './types'
 
-const isDemo = new URLSearchParams(location.search).has('demo')
+const searchParams = new URLSearchParams(location.search)
+const isDemo = searchParams.has('demo')
+const singleFileId = searchParams.get('single')
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
@@ -20,6 +23,7 @@ export default function App() {
   const [rootName, setRootName] = useState(isDemo ? 'brain-hub' : '')
   const [tree, setTree] = useState<TreeNode[]>(isDemo ? DEMO_TREE : [])
   const [currentDocument, setCurrentDocument] = useState<LoadedDocument | null>(isDemo ? getDemoDocument() : null)
+  const [singleDocument, setSingleDocument] = useState<LoadedDocument>()
   const [html, setHtml] = useState('')
   const [headings, setHeadings] = useState<Heading[]>([])
   const [tab, setTab] = useState<'files' | 'outline'>('files')
@@ -42,6 +46,8 @@ export default function App() {
       if (isDemo) {
         if (!findNode(DEMO_TREE, path) && path !== 'AGENT.md') throw new Error(`找不到 ${path}`)
         next = getDemoDocument(path)
+      } else if (singleDocument && path === singleDocument.path) {
+        next = singleDocument
       } else {
         if (!rootHandle) throw new Error('请先重新授权文件夹')
         const indexed = fileMap.get(path)?.handle
@@ -62,13 +68,14 @@ export default function App() {
     } finally {
       setLoading(false)
     }
-  }, [fileMap, rootHandle])
+  }, [fileMap, rootHandle, singleDocument])
 
   const loadDirectory = useCallback(async (handle: FileSystemDirectoryHandle) => {
     setLoading(true)
     setError('')
     try {
       const root = await buildTree(handle, settings.showHidden)
+      setSingleDocument(undefined)
       setRootHandle(handle)
       setSavedHandle(undefined)
       setRootName(handle.name)
@@ -123,14 +130,38 @@ export default function App() {
       if (currentDocument) await openPath(currentDocument.path)
       return
     }
+    if (singleDocument) {
+      await openPath(singleDocument.path)
+      return
+    }
     if (!rootHandle) return chooseFolder()
     const currentPath = currentDocument?.path
     await loadDirectory(rootHandle)
     if (currentPath) await openPath(currentPath)
-  }, [chooseFolder, currentDocument, loadDirectory, openPath, rootHandle])
+  }, [chooseFolder, currentDocument, loadDirectory, openPath, rootHandle, singleDocument])
 
   useEffect(() => {
-    if (isDemo) return
+    if (isDemo || !singleFileId) return
+    let active = true
+    loadCapturedMarkdown(singleFileId).then(async (captured) => {
+      if (!active) return
+      const next = toLoadedDocument(captured)
+      const rendered = await renderMarkdown(next.markdown)
+      if (!active) return
+      setSingleDocument(next)
+      setRootName(captured.parentName)
+      setTree([{ kind: 'file', name: next.name, path: next.path }])
+      setCurrentDocument(next)
+      setHtml(rendered.html)
+      setHeadings(rendered.headings)
+    }).catch((caught) => {
+      if (active) setError(caught instanceof Error ? caught.message : '无法读取这个 Markdown 文件')
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (isDemo || singleFileId) return
     let active = true
     getRootHandle().then(async (handle) => {
       if (!active || !handle) return
