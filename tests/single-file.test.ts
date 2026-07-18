@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loadCapturedMarkdown, singleFileStorageKey, toLoadedDocument } from '../src/lib/singleFile'
+import { loadCapturedMarkdown, relativePathFromSource, singleFileStorageKey, toLoadedDocument } from '../src/lib/singleFile'
 
 describe('single-file handoff', () => {
   it('loads a captured file from extension session storage', async () => {
@@ -17,5 +17,11 @@ describe('single-file handoff', () => {
     expect(captured.name).toBe('笔记.md')
     expect(toLoadedDocument(captured)).toMatchObject({ path: '笔记.md', markdown: '# 标题' })
     vi.unstubAllGlobals()
+  })
+
+  it('derives the opened file path inside an authorized containing directory', () => {
+    expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'brain-hub')).toBe('docs/plan.md')
+    expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'docs')).toBe('plan.md')
+    expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'other')).toBeNull()
   })
 })

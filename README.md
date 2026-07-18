@@ -9,7 +9,9 @@
 - GFM、代码高亮、KaTeX、Mermaid
 - 相对 Markdown 链接和本地图片
 - Chrome 直接打开本地 `.md/.markdown/.mdx` 文件时自动进入单文件阅读模式
+- 单文件模式默认显示文档大纲；“文件”页可加载并记住当前文件所在目录
 - 文件变化自动刷新、浅色/深色主题、字号和侧栏宽度设置
+- 中文 / English 界面切换
 - DOMPurify 清洗 HTML；所有功能离线运行
 - 只申请 Chrome `storage` 权限；文件网址访问仅用于用户在 Chrome 中主动打开的本地 Markdown
 
@@ -23,6 +25,8 @@
 
 Chrome 会在浏览器重启后重新确认目录权限，这是 File System Access API 的安全机制。Local MD Reader 会记住目录句柄，但只有你点击恢复授权后才能再次读取。
 
+首次从 Chrome 直接打开单个 Markdown 时，左侧默认显示大纲。点击“文件”并选择该文件所在目录（或其上级目录）后，扩展会加载完整文件树；以后打开同一授权目录内的文件会优先自动恢复目录。
+
 ## 开发与验收
 
 ```bash
@@ -30,7 +34,7 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-0.1.3.zip
+npm run package      # 生成 local-md-reader-0.1.4.zip
 ```
 
 ## 隐私与安全边界

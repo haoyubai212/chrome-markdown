@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react'
-import type { TreeNode } from '../types'
+import { translate } from '../lib/i18n'
+import type { Language, TreeNode } from '../types'
 
 type FileTreeProps = {
   nodes: TreeNode[]
   activePath: string
   query: string
+  language: Language
   onOpen: (path: string) => void
 }
 
@@ -60,10 +62,10 @@ function TreeItem({ node, depth, activePath, query, onOpen }: {
   )
 }
 
-export function FileTree({ nodes, activePath, query, onOpen }: FileTreeProps) {
+export function FileTree({ nodes, activePath, query, language, onOpen }: FileTreeProps) {
   const normalizedQuery = useMemo(() => query.trim().toLowerCase(), [query])
   return (
-    <nav className="file-tree" aria-label="Markdown files">
+    <nav className="file-tree" aria-label={translate(language, 'markdownFiles')}>
       {nodes.map((node) => <TreeItem key={node.path || node.name} node={node} depth={0} activePath={activePath} query={normalizedQuery} onOpen={onOpen} />)}
     </nav>
   )

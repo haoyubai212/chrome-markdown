@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { LoadedDocument } from '../types'
+import { translate } from '../lib/i18n'
+import type { Language, LoadedDocument } from '../types'
 import { readAssetUrl } from '../lib/filesystem'
 import { isImageFile, isMarkdownFile, resolveRelativePath } from '../lib/paths'
 
@@ -8,12 +9,13 @@ type ReaderProps = {
   html: string
   rootHandle?: FileSystemDirectoryHandle
   fontSize: number
+  language: Language
   onOpenPath: (path: string) => void
 }
 
 let mermaidInitialized = false
 
-export function Reader({ document, html, rootHandle, fontSize, onOpenPath }: ReaderProps) {
+export function Reader({ document, html, rootHandle, fontSize, language, onOpenPath }: ReaderProps) {
   const articleRef = useRef<HTMLElement>(null)
   const [renderError, setRenderError] = useState('')
 
@@ -49,13 +51,13 @@ export function Reader({ document, html, rootHandle, fontSize, onOpenPath }: Rea
 
     setRenderError('')
     Promise.all([hydrateAssets(), hydrateMermaid()]).catch((error: unknown) => {
-      if (!cancelled) setRenderError(error instanceof Error ? error.message : '图表渲染失败')
+      if (!cancelled) setRenderError(error instanceof Error ? error.message : translate(language, 'diagramFailed'))
     })
     return () => {
       cancelled = true
       objectUrls.forEach((url) => URL.revokeObjectURL(url))
     }
-  }, [document, html, rootHandle])
+  }, [document, html, language, rootHandle])
 
   function handleClick(event: React.MouseEvent<HTMLElement>) {
     const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a')
@@ -73,14 +75,14 @@ export function Reader({ document, html, rootHandle, fontSize, onOpenPath }: Rea
       <main className="reader-empty">
         <div className="empty-mark">M↓</div>
         <h1>Local MD Reader</h1>
-        <p>选择左侧的 Markdown 文件开始阅读。</p>
+        <p>{translate(language, 'chooseFile')}</p>
       </main>
     )
   }
 
   return (
     <main className="reader-scroll">
-      {renderError ? <div className="render-warning">部分图表未能渲染：{renderError}</div> : null}
+      {renderError ? <div className="render-warning">{translate(language, 'partialDiagram', { error: renderError })}</div> : null}
       <article
         ref={articleRef}
         className="markdown-body"

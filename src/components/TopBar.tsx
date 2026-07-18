@@ -1,17 +1,19 @@
 import { Moon, RefreshCw, Settings as SettingsIcon, Sun } from 'lucide-react'
-import type { Theme } from '../types'
+import { translate } from '../lib/i18n'
+import type { Language, Theme } from '../types'
 
 type TopBarProps = {
   rootName: string
   path: string
   theme: Theme
+  language: Language
   loading: boolean
   onThemeToggle: () => void
   onRefresh: () => void
   onSettings: () => void
 }
 
-export function TopBar({ rootName, path, theme, loading, onThemeToggle, onRefresh, onSettings }: TopBarProps) {
+export function TopBar({ rootName, path, theme, language, loading, onThemeToggle, onRefresh, onSettings }: TopBarProps) {
   const crumbs = path.split('/').filter(Boolean)
   return (
     <header className="topbar">
@@ -20,13 +22,13 @@ export function TopBar({ rootName, path, theme, loading, onThemeToggle, onRefres
         {crumbs.map((crumb) => <span key={`${path}-${crumb}`} className="crumb">{crumb}</span>)}
       </div>
       <div className="topbar-actions">
-        <button className="icon-button" onClick={onThemeToggle} title="切换主题" aria-label="切换主题">
+        <button className="icon-button" onClick={onThemeToggle} title={translate(language, 'switchTheme')} aria-label={translate(language, 'switchTheme')}>
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="icon-button" onClick={onRefresh} title="重新读取" aria-label="重新读取">
+        <button className="icon-button" onClick={onRefresh} title={translate(language, 'refresh')} aria-label={translate(language, 'refresh')}>
           <RefreshCw className={loading ? 'is-spinning' : ''} size={18} />
         </button>
-        <button className="icon-button" onClick={onSettings} title="阅读设置" aria-label="阅读设置"><SettingsIcon size={18} /></button>
+        <button className="icon-button" onClick={onSettings} title={translate(language, 'readingSettings')} aria-label={translate(language, 'readingSettings')}><SettingsIcon size={18} /></button>
       </div>
     </header>
   )

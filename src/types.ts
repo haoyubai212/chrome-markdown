@@ -1,4 +1,5 @@
 export type Theme = 'system' | 'light' | 'dark'
+export type Language = 'zh' | 'en'
 
 export type FileNode = {
   kind: 'file'
@@ -33,6 +34,7 @@ export type Heading = {
 
 export type Settings = {
   theme: Theme
+  language: Language
   fontSize: number
   sidebarWidth: number
   showHidden: boolean
@@ -41,6 +43,7 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
+  language: 'zh',
   fontSize: 18,
   sidebarWidth: 340,
   showHidden: false,
