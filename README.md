@@ -1,4 +1,4 @@
-# Local MD Reader
+# Chrome Markdown
 
 一个 clean-room、完全本地、只读的 Chrome Markdown 文件夹阅读器。它不依赖账号、订阅或后端服务，也不包含从其他扩展复制的代码或资产。
 
@@ -25,7 +25,7 @@
 2. 打开 `chrome://extensions`，开启“开发者模式”。
 3. 点击“加载已解压的扩展程序”，选择本项目的 `dist/` 文件夹。
 4. 在扩展详情中开启“允许访问文件网址”，以便直接打开本地 Markdown。
-5. 用 Chrome 打开任意本地 `.md` 文件；Local MD Reader 会自动接管渲染。
+5. 用 Chrome 打开任意本地 `.md` 文件；Chrome Markdown 会自动接管渲染。
 
 直接打开本地 Markdown 不使用系统目录选择器。扩展以当前文件的父目录为根，立即读取并显示这一层的 Markdown 与文件夹；展开某个文件夹时才读取下一层，因此大目录也能快速出现，不会先卡在临时单文件视图，也不会弹出逐项目授权窗口。
 
@@ -38,7 +38,7 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-1.0.0.zip
+npm run package      # 生成 chrome-markdown-1.0.0.zip
 ```
 
 ## 隐私与安全边界

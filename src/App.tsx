@@ -138,7 +138,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     try {
       const picker = window.showDirectoryPicker
       if (!picker) throw new Error(message('unsupportedBrowser'))
-      const handle = await picker({ mode: 'read', id: 'local-md-reader-folder' })
+      const handle = await picker({ mode: 'read', id: 'chrome-markdown-folder' })
       const preferredPath = singleSource ? relativePathFromSource(singleSource.sourceUrl, handle.name) : undefined
       if (singleSource && !preferredPath) {
         setError(message('selectContainingFolder', { name: singleSource.name }))

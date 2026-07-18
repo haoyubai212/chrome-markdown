@@ -1,4 +1,4 @@
-const FAVICON_ID = 'local-md-reader-favicon'
+const FAVICON_ID = 'chrome-markdown-favicon'
 
 function faviconLinks(sourceDocument: Document): HTMLLinkElement[] {
   return Array.from(sourceDocument.head.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'))
@@ -39,5 +39,5 @@ export function installReaderFavicon(sourceDocument: Document, iconUrl: string):
 }
 
 export function applyReaderTitle(sourceDocument: Document): void {
-  sourceDocument.title = 'Local MD Reader'
+  sourceDocument.title = 'Chrome Markdown'
 }

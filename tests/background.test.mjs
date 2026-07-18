@@ -8,8 +8,8 @@ beforeEach(async () => {
   vi.stubGlobal('chrome', {
     action: { onClicked: { addListener: vi.fn() } },
     runtime: {
-      id: 'local-reader-test',
-      getURL: (path) => `chrome-extension://local-reader-test/${path}`,
+      id: 'chrome-markdown-test',
+      getURL: (path) => `chrome-extension://chrome-markdown-test/${path}`,
       onMessage: { addListener: vi.fn((listener) => { onMessage = listener }) },
     },
     tabs: {

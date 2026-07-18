@@ -38,7 +38,7 @@ async function mountReader() {
   document.documentElement.style.width = '100%'
   document.documentElement.style.height = '100%'
   document.documentElement.style.overflow = 'hidden'
-  document.body.classList.add('local-md-reader-active')
+  document.body.classList.add('chrome-markdown-active')
   document.body.style.width = '100%'
   document.body.style.height = '100%'
   document.body.style.margin = '0'

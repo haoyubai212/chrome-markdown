@@ -81,7 +81,7 @@ export function Reader({ document, html, rootHandle, localSourceUrl, fontSize, l
     return (
       <main className="reader-empty">
         <div className="empty-mark">M↓</div>
-        <h1>Local MD Reader</h1>
+        <h1>Chrome Markdown</h1>
         <p>{translate(language, 'chooseFile')}</p>
       </main>
     )

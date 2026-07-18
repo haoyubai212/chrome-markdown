@@ -2,13 +2,13 @@ import { openDB } from 'idb'
 import type { Settings } from '../types'
 import { DEFAULT_SETTINGS } from '../types'
 
-const DB_NAME = 'local-md-reader'
+const DB_NAME = 'chrome-markdown'
 const STORE_NAME = 'handles'
 const ROOT_KEY = 'root-directory'
 const ROOTS_KEY = 'root-directories-v2'
 const MAX_ROOT_HANDLES = 20
-const SETTINGS_KEY = 'local-md-reader-settings-v1'
-const LAST_PATH_KEY = 'local-md-reader-last-path'
+const SETTINGS_KEY = 'chrome-markdown-settings-v1'
+const LAST_PATH_KEY = 'chrome-markdown-last-path'
 
 async function database() {
   return openDB(DB_NAME, 1, {

@@ -60,14 +60,14 @@ brain-hub/
 
 ## 完全本地
 
-Local MD Reader 只读取你明确授权的文件夹，不创建账号、不连接远程 API，也不会修改文件。
+Chrome Markdown 只读取你明确授权的文件夹，不创建账号、不连接远程 API，也不会修改文件。
 `
 
 export function getDemoDocument(path = 'AGENT.md'): LoadedDocument {
   return {
     path,
     name: path.split('/').at(-1) ?? 'AGENT.md',
-    markdown: path === 'AGENT.md' ? markdown : `# ${path.split('/').at(-1)}\n\n这是 Local MD Reader 的本地演示文档。\n\n[返回 AGENT.md](/AGENT.md)`,
+    markdown: path === 'AGENT.md' ? markdown : `# ${path.split('/').at(-1)}\n\n这是 Chrome Markdown 的本地演示文档。\n\n[返回 AGENT.md](/AGENT.md)`,
     lastModified: Date.now(),
   }
 }

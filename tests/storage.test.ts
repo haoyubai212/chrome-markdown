@@ -42,7 +42,7 @@ describe('extension-wide reading settings', () => {
       storage: {
         local: {
           get: vi.fn().mockResolvedValue({
-            'local-md-reader-settings-v1': { ...DEFAULT_SETTINGS, theme: 'dark', language: 'en' },
+            'chrome-markdown-settings-v1': { ...DEFAULT_SETTINGS, theme: 'dark', language: 'en' },
           }),
           set,
         },
@@ -51,7 +51,7 @@ describe('extension-wide reading settings', () => {
     expect(await loadPersistedSettings()).toMatchObject({ theme: 'dark', language: 'en' })
     saveSettings({ ...DEFAULT_SETTINGS, fontSize: 20 })
     expect(set).toHaveBeenCalledWith({
-      'local-md-reader-settings-v1': { ...DEFAULT_SETTINGS, fontSize: 20 },
+      'chrome-markdown-settings-v1': { ...DEFAULT_SETTINGS, fontSize: 20 },
     })
     vi.unstubAllGlobals()
   })

@@ -35,7 +35,7 @@ export function TopBar({ rootName, path, sourceUrl, theme, language, loading, on
     <header className="topbar">
       <div className="topbar-location">
         <div className="breadcrumbs" title={sourceUrl || path}>
-          <span>{rootName || 'Local MD Reader'}</span>
+          <span>{rootName || 'Chrome Markdown'}</span>
           {crumbs.map((crumb) => <span key={`${path}-${crumb}`} className="crumb">{crumb}</span>)}
         </div>
         {sourceUrl ? (

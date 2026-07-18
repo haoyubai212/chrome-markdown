@@ -22,7 +22,7 @@ describe('TopBar file address', () => {
 
   it('does not show the copy action when the native path is unavailable', () => {
     const html = renderToStaticMarkup(
-      <TopBar rootName="Local MD Reader" path="" theme="dark" language="en" loading={false} {...handlers} />,
+      <TopBar rootName="Chrome Markdown" path="" theme="dark" language="en" loading={false} {...handlers} />,
     )
 
     expect(html).not.toContain('Copy full file address')

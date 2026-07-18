@@ -11,7 +11,7 @@ describe('interface language', () => {
   })
 
   it('migrates existing settings to the default Chinese interface', () => {
-    const values = new Map([['local-md-reader-settings-v1', JSON.stringify({ theme: 'dark', fontSize: 20 })]])
+    const values = new Map([['chrome-markdown-settings-v1', JSON.stringify({ theme: 'dark', fontSize: 20 })]])
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
@@ -21,7 +21,7 @@ describe('interface language', () => {
   })
 
   it('migrates the retired system theme to light', () => {
-    const values = new Map([['local-md-reader-settings-v1', JSON.stringify({ theme: 'system', language: 'en' })]])
+    const values = new Map([['chrome-markdown-settings-v1', JSON.stringify({ theme: 'system', language: 'en' })]])
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
