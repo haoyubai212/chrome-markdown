@@ -1,0 +1,46 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import highlightStyles from 'highlight.js/styles/github.css?inline'
+import katexStyles from 'katex/dist/katex.min.css?inline'
+import appStyles from './styles/app.css?inline'
+import App from './App'
+import { captureMarkdownDocument } from './lib/contentSource'
+import { loadPersistedSettings } from './lib/storage'
+
+async function mountReader() {
+  const initialFile = captureMarkdownDocument(location.href, document)
+  if (!initialFile) return
+
+  if (document.getElementById('root')) return
+
+  const style = document.createElement('style')
+  style.dataset.localMdReader = 'styles'
+  style.textContent = `${highlightStyles}\n${katexStyles}\n${appStyles}`
+  document.head.append(style)
+
+  const root = document.createElement('div')
+  root.id = 'root'
+
+  document.documentElement.style.width = '100%'
+  document.documentElement.style.height = '100%'
+  document.documentElement.style.overflow = 'hidden'
+  document.body.classList.add('local-md-reader-active')
+  document.body.style.width = '100%'
+  document.body.style.height = '100%'
+  document.body.style.margin = '0'
+  document.body.style.overflow = 'hidden'
+  document.body.append(root)
+
+  const initialSettings = await loadPersistedSettings()
+  createRoot(root).render(
+    <StrictMode>
+      <App
+        initialFile={initialFile}
+        initialSettings={initialSettings}
+        navigateToLocalFile={(url) => location.assign(url)}
+      />
+    </StrictMode>,
+  )
+}
+
+void mountReader()

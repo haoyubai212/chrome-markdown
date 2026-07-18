@@ -101,6 +101,7 @@ export async function renderMarkdown(markdown: string): Promise<{ html: string; 
   const raw = await parser.parse(frontmatter?.body ?? markdown)
   const clean = DOMPurify.sanitize(raw, {
     USE_PROFILES: { html: true },
+    FORBID_TAGS: ['style', 'link'],
     ADD_TAGS: ['math', 'annotation', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup', 'mfrac'],
     ADD_ATTR: ['target', 'rel', 'aria-hidden', 'xmlns'],
   })

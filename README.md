@@ -11,6 +11,7 @@
 - YAML Frontmatter 属性卡片（数组值自动显示为标签，且不污染文档大纲）
 - 相对 Markdown 链接和本地图片
 - Chrome 直接打开本地 `.md/.markdown/.mdx` 文件时自动进入单文件阅读模式
+- 地址栏始终保留真实的 `file:///.../README.md`，书签、刷新和相对链接行为与普通本地文件一致
 - 单文件模式默认显示文档大纲；切到“文件”即可看到同级文件和子目录
 - 文件变化自动刷新、浅色/深色双选按钮、字号和侧栏宽度设置
 - 中文 / English 界面切换
@@ -36,18 +37,18 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-0.2.0.zip
+npm run package      # 生成 local-md-reader-0.3.0.zip
 ```
 
 ## 隐私与安全边界
 
 - 只读取用户在 Chrome 中主动打开的 Markdown 所在父目录及其子目录；或用户在独立阅读页中明确选择的目录。
-- 直接打开单个本地 Markdown 时，原文只在当前浏览器会话中临时转交给阅读页；关闭标签页后即清除。
+- 直接打开单个本地 Markdown 时，Content Script 在当前 `file://` 页面挂载普通 React 根节点；不跳转内部扩展页，也不经过 `storage.session` 中转。
 - 不写入文件，不上传内容，不加载远程脚本，不发送遥测。
 - 扩展不包含远程 API；CSP 只允许扩展自身及本地 `file:` 读取。外部链接只有在用户主动点击后才交给新标签页。
 - `.git`、`node_modules`、`dist`、`build` 默认永远忽略；其他隐藏目录默认隐藏，可在设置中显示。
-- Markdown 内嵌 HTML 会先经过 DOMPurify；Mermaid 使用 `securityLevel: strict`。
+- Markdown 内嵌 HTML 会先经过 DOMPurify，且明确移除 `<style>` 与 `<link>`，避免正文样式影响阅读器界面；Mermaid 使用 `securityLevel: strict`。
 
 ## Clean-room 说明
 
-本项目根据文件夹 Markdown 阅读器的一般可观察行为独立实现。没有修改第三方扩展的订阅校验，没有调用其后端，也没有复制或反编译其压缩代码。
+本项目是 clean-room 独立实现：参考本地 Markdown 阅读器可观察到的产品行为及浏览器扩展运行机制，但没有修改第三方扩展的订阅校验、调用其后端或复制其代码与资产。

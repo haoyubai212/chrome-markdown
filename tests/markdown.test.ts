@@ -19,6 +19,13 @@ describe('Markdown renderer', () => {
     expect(result.html).toContain('hljs')
   })
 
+  it('does not allow Markdown stylesheets to affect the reader UI', async () => {
+    const result = await renderMarkdown('<style>.sidebar { display: none }</style>\n\n<link rel="stylesheet" href="file:///tmp/theme.css">\n\n# Visible')
+    expect(result.html).not.toContain('<style')
+    expect(result.html).not.toContain('<link')
+    expect(result.headings).toEqual([{ id: 'visible', level: 1, text: 'Visible' }])
+  })
+
   it('renders Unicode text in math without reporting KaTeX compatibility warnings', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const result = await renderMarkdown('$x（中文）$')

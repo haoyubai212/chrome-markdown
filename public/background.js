@@ -9,8 +9,6 @@ chrome.action.onClicked.addListener(async () => {
   await chrome.tabs.create({ url })
 })
 
-const singleFileStorageKey = (tabId) => `local-md-reader-single-file-${tabId}`
-
 const markdownExtension = /\.(?:md|markdown|mdown|mkd|mdx)$/i
 const imageExtension = /\.(?:png|jpe?g|gif|webp|svg|avif)$/i
 
@@ -54,37 +52,21 @@ const isAllowedLocalTarget = (sourceUrl, targetUrl, kind) => {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type === 'OPEN_LOCAL_MARKDOWN') {
-    const tabId = sender.tab?.id
-    if (!Number.isInteger(tabId) || typeof message.payload?.markdown !== 'string') {
-      sendResponse({ ok: false, error: '缺少文件或标签页信息' })
-      return false
-    }
-
-    const key = singleFileStorageKey(tabId)
-    chrome.storage.session.set({ [key]: message.payload })
-      .then(() => chrome.tabs.update(tabId, { url: chrome.runtime.getURL(`reader.html?single=${tabId}`) }))
-      .then(() => sendResponse({ ok: true }))
-      .catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) }))
-    return true
-  }
-
   if (message?.type === 'READ_LOCAL_URL') {
-    const tabId = sender.tab?.id
     const { sourceUrl, targetUrl, kind } = message.payload ?? {}
-    if (!Number.isInteger(tabId) || typeof sourceUrl !== 'string' || typeof targetUrl !== 'string') {
+    const senderUrl = sender.url ?? sender.tab?.url
+    if (typeof senderUrl !== 'string' || typeof sourceUrl !== 'string' || typeof targetUrl !== 'string') {
       sendResponse({ ok: false, error: '无效的本地文件请求' })
       return false
     }
-    const key = singleFileStorageKey(tabId)
-    chrome.storage.session.get(key)
-      .then((stored) => {
-        const capturedSource = stored[key]?.sourceUrl
-        if (capturedSource !== sourceUrl || !isAllowedLocalTarget(sourceUrl, targetUrl, kind)) {
-          throw new Error('本地文件请求超出当前目录范围')
-        }
-        return fetch(targetUrl)
-      })
+    const senderSource = new URL(senderUrl)
+    senderSource.hash = ''
+    senderSource.search = ''
+    if (senderSource.href !== sourceUrl || !isAllowedLocalTarget(sourceUrl, targetUrl, kind)) {
+      sendResponse({ ok: false, error: '本地文件请求超出当前目录范围' })
+      return false
+    }
+    fetch(targetUrl)
       .then(async (response) => {
         if (kind !== 'asset') return { text: await response.text() }
         const buffer = await response.arrayBuffer()
@@ -96,8 +78,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return false
-})
-
-chrome.tabs.onRemoved.addListener((tabId) => {
-  void chrome.storage.session.remove(singleFileStorageKey(tabId))
 })

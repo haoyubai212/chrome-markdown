@@ -14,6 +14,7 @@ describe('Sidebar folder authorization', () => {
         query=""
         language="zh"
         singleFileMode
+        showFolderAction
         restoreFolderName="brain-hub"
         onTabChange={() => undefined}
         onQueryChange={() => undefined}

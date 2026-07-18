@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mergeRootHandles } from '../src/lib/storage'
+import { loadPersistedSettings, mergeRootHandles, saveSettings } from '../src/lib/storage'
+import { DEFAULT_SETTINGS } from '../src/types'
 
 function directory(name: string, id = name): FileSystemDirectoryHandle {
   return {
@@ -31,5 +32,27 @@ describe('remembered directories', () => {
     const merged = await mergeRootHandles(existing, directory('current'))
     expect(merged).toHaveLength(20)
     expect(merged[0].name).toBe('current')
+  })
+})
+
+describe('extension-wide reading settings', () => {
+  it('loads and saves settings through chrome.storage.local', async () => {
+    const set = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('chrome', {
+      storage: {
+        local: {
+          get: vi.fn().mockResolvedValue({
+            'local-md-reader-settings-v1': { ...DEFAULT_SETTINGS, theme: 'dark', language: 'en' },
+          }),
+          set,
+        },
+      },
+    })
+    expect(await loadPersistedSettings()).toMatchObject({ theme: 'dark', language: 'en' })
+    saveSettings({ ...DEFAULT_SETTINGS, fontSize: 20 })
+    expect(set).toHaveBeenCalledWith({
+      'local-md-reader-settings-v1': { ...DEFAULT_SETTINGS, fontSize: 20 },
+    })
+    vi.unstubAllGlobals()
   })
 })

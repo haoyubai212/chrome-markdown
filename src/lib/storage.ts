@@ -61,8 +61,24 @@ export function loadSettings(): Settings {
   }
 }
 
+function normalizeSettings(saved: Partial<Settings>): Settings {
+  return { ...DEFAULT_SETTINGS, ...saved, theme: saved.theme === 'dark' ? 'dark' : 'light' }
+}
+
+export async function loadPersistedSettings(): Promise<Settings> {
+  try {
+    if (globalThis.chrome?.storage?.local) {
+      const stored = await chrome.storage.local.get(SETTINGS_KEY)
+      const saved = stored[SETTINGS_KEY]
+      if (saved && typeof saved === 'object') return normalizeSettings(saved as Partial<Settings>)
+    }
+  } catch { /* fall back to the extension page's localStorage */ }
+  return loadSettings()
+}
+
 export function saveSettings(settings: Settings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)) } catch { /* file pages may deny localStorage */ }
+  if (globalThis.chrome?.storage?.local) void chrome.storage.local.set({ [SETTINGS_KEY]: settings })
 }
 
 export function loadLastPath(): string {

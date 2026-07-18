@@ -10,16 +10,21 @@ import { translate, type MessageKey } from './lib/i18n'
 import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
-import { loadCapturedMarkdown, relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
+import { relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
 import { getRootHandles, loadLastPath, loadSettings, saveLastPath, saveRootHandle, saveSettings } from './lib/storage'
 import type { Heading, LoadedDocument, Settings, TreeNode } from './types'
 
 const searchParams = new URLSearchParams(location.search)
 const isDemo = searchParams.has('demo')
-const singleFileId = searchParams.get('single')
 
-export default function App() {
-  const [settings, setSettings] = useState<Settings>(loadSettings)
+type AppProps = {
+  initialFile?: CapturedMarkdownFile
+  initialSettings?: Settings
+  navigateToLocalFile?: (url: string) => void
+}
+
+export default function App({ initialFile, initialSettings, navigateToLocalFile }: AppProps) {
+  const [settings, setSettings] = useState<Settings>(() => initialSettings ?? loadSettings())
   const [rootHandle, setRootHandle] = useState<FileSystemDirectoryHandle>()
   const [localRootUrl, setLocalRootUrl] = useState<string>()
   const [pendingDirectories, setPendingDirectories] = useState<Array<{ handle: FileSystemDirectoryHandle; relativePath?: string }>>([])
@@ -30,7 +35,7 @@ export default function App() {
   const [singleSource, setSingleSource] = useState<CapturedMarkdownFile>()
   const [html, setHtml] = useState('')
   const [headings, setHeadings] = useState<Heading[]>([])
-  const [tab, setTab] = useState<'files' | 'outline'>(singleFileId ? 'outline' : 'files')
+  const [tab, setTab] = useState<'files' | 'outline'>(initialFile ? 'outline' : 'files')
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -60,6 +65,10 @@ export default function App() {
         const sourceUrl = indexed?.url
           ?? (path === singleDocument?.path ? singleSource.sourceUrl : localUrlForPath(localRootUrl, path))
         if (!sourceUrl) throw new Error(message('fileNotFound', { path }))
+        if (navigateToLocalFile && sourceUrl !== singleSource.sourceUrl) {
+          navigateToLocalFile(sourceUrl)
+          return
+        }
         next = {
           path,
           name: indexed?.name ?? path.split('/').at(-1) ?? path,
@@ -83,13 +92,13 @@ export default function App() {
         setHeadings(rendered.headings)
       })
       saveLastPath(path)
-      requestAnimationFrame(() => globalThis.document.querySelector('.reader-scroll')?.scrollTo({ top: 0 }))
+      requestAnimationFrame(() => document.querySelector('.reader-scroll')?.scrollTo({ top: 0 }))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : message('readFileFailed'))
     } finally {
       setLoading(false)
     }
-  }, [fileMap, localRootUrl, message, rootHandle, singleDocument, singleSource])
+  }, [fileMap, localRootUrl, message, navigateToLocalFile, rootHandle, singleDocument, singleSource])
 
   const loadDirectory = useCallback(async (handle: FileSystemDirectoryHandle, preferredPath?: string) => {
     setLoading(true)
@@ -192,9 +201,9 @@ export default function App() {
   }, [chooseFolder, currentDocument, loadDirectory, localRootUrl, openPath, rootHandle, singleDocument, singleSource])
 
   useEffect(() => {
-    if (isDemo || !singleFileId) return
+    if (isDemo || !initialFile) return
     let active = true
-    loadCapturedMarkdown(singleFileId).then(async (captured) => {
+    Promise.resolve(initialFile).then(async (captured) => {
       if (!active) return
       const next = toLoadedDocument(captured)
       const directoryUrl = parentDirectoryUrl(captured.sourceUrl)
@@ -215,10 +224,10 @@ export default function App() {
       if (active) setError(message('cannotReadSingle'))
     })
     return () => { active = false }
-  }, [message])
+  }, [initialFile, message])
 
   useEffect(() => {
-    if (isDemo || singleFileId) return
+    if (isDemo || initialFile) return
     let active = true
     getRootHandles().then(async (handles) => {
       const pending: Array<{ handle: FileSystemDirectoryHandle; relativePath?: undefined }> = []
@@ -236,7 +245,7 @@ export default function App() {
       setRootName(pending[0].handle.name)
     }).catch(() => setError(message('cannotRestoreFolder')))
     return () => { active = false }
-  }, [loadDirectory, message])
+  }, [initialFile, loadDirectory, message])
 
   const expandLocalDirectory = useCallback(async (path: string, url: string) => {
     if (!singleSource || !localRootUrl) return
@@ -259,8 +268,8 @@ export default function App() {
 
   useEffect(() => {
     saveSettings(settings)
-    globalThis.document.documentElement.dataset.theme = settings.theme
-    globalThis.document.documentElement.lang = settings.language === 'zh' ? 'zh-CN' : 'en'
+    document.documentElement.dataset.theme = settings.theme
+    document.documentElement.lang = settings.language === 'zh' ? 'zh-CN' : 'en'
   }, [settings])
 
   useEffect(() => {
@@ -312,7 +321,7 @@ export default function App() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         setTab('files')
-        requestAnimationFrame(() => globalThis.document.getElementById('file-search')?.focus())
+        requestAnimationFrame(() => document.getElementById('file-search')?.focus())
       }
     }
     window.addEventListener('keydown', keydown)
@@ -336,7 +345,7 @@ export default function App() {
 
   return (
     <div className="app-shell" data-theme={settings.theme} style={{ '--sidebar-width': `${settings.sidebarWidth}px` } as React.CSSProperties}>
-      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(singleFileId && !rootHandle && !localRootUrl)} restoreFolderName={pendingDirectories[0]?.handle.name} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onExpandDirectory={expandLocalDirectory} onChooseFolder={chooseFolder} onRestoreFolder={restoreSavedFolder} />
+      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(initialFile && !rootHandle && !localRootUrl)} showFolderAction={!initialFile} restoreFolderName={pendingDirectories[0]?.handle.name} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onExpandDirectory={expandLocalDirectory} onChooseFolder={chooseFolder} onRestoreFolder={restoreSavedFolder} />
       <div className="resize-handle" onPointerDown={() => { resizing.current = true; globalThis.document.body.classList.add('is-resizing') }} />
       <section className="workspace">
         <TopBar rootName={rootName} path={currentDocument?.path ?? ''} theme={settings.theme} language={settings.language} loading={loading} onThemeToggle={() => setSettings((current) => ({ ...current, theme: current.theme === 'dark' ? 'light' : 'dark' }))} onRefresh={refresh} onSettings={() => setShowSettings(true)} />

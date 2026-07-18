@@ -1,17 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 let onMessage
-let sessionValues
 
 beforeEach(async () => {
   vi.resetModules()
   onMessage = undefined
-  sessionValues = {
-    'local-md-reader-single-file-42': {
-      sourceUrl: 'file:///Users/test/project/docs/plan.md',
-      markdown: '# Plan',
-    },
-  }
   vi.stubGlobal('chrome', {
     action: { onClicked: { addListener: vi.fn() } },
     runtime: {
@@ -19,16 +12,8 @@ beforeEach(async () => {
       getURL: (path) => `chrome-extension://local-reader-test/${path}`,
       onMessage: { addListener: vi.fn((listener) => { onMessage = listener }) },
     },
-    storage: {
-      session: {
-        get: vi.fn(async (key) => ({ [key]: sessionValues[key] })),
-        set: vi.fn(async (values) => Object.assign(sessionValues, values)),
-        remove: vi.fn(async (key) => { delete sessionValues[key] }),
-      },
-    },
     tabs: {
       create: vi.fn(), query: vi.fn(async () => []), update: vi.fn(),
-      onRemoved: { addListener: vi.fn() },
     },
     windows: { update: vi.fn() },
   })
@@ -47,7 +32,7 @@ describe('background local file boundary', () => {
           targetUrl: 'file:///Users/test/project/docs/guides/',
           kind: 'directory',
         },
-      }, { tab: { id: 42 } }, resolve)).toBe(true)
+      }, { url: 'file:///Users/test/project/docs/plan.md', tab: { id: 42 } }, resolve)).toBe(true)
     })
     expect(fetchMock).toHaveBeenCalledWith('file:///Users/test/project/docs/guides/')
     expect(response).toEqual({ ok: true, text: 'addRow("guide.md", "guide.md", 0)' })
@@ -64,7 +49,24 @@ describe('background local file boundary', () => {
           targetUrl: 'file:///Users/test/project/',
           kind: 'directory',
         },
-      }, { tab: { id: 42 } }, resolve)).toBe(true)
+      }, { url: 'file:///Users/test/project/docs/plan.md', tab: { id: 42 } }, resolve)).toBe(false)
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(response).toMatchObject({ ok: false })
+  })
+
+  it('rejects a source URL that does not match the actual file page sender', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const response = await new Promise((resolve) => {
+      expect(onMessage({
+        type: 'READ_LOCAL_URL',
+        payload: {
+          sourceUrl: 'file:///Users/test/other/note.md',
+          targetUrl: 'file:///Users/test/other/',
+          kind: 'directory',
+        },
+      }, { url: 'file:///Users/test/project/docs/plan.md', tab: { id: 42 } }, resolve)).toBe(false)
     })
     expect(fetchMock).not.toHaveBeenCalled()
     expect(response).toMatchObject({ ok: false })
