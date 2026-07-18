@@ -7,6 +7,7 @@ describe('interface language', () => {
     expect(translate('zh', 'outline')).toBe('大纲')
     expect(translate('en', 'outline')).toBe('Outline')
     expect(translate('en', 'restoreFolder', { name: 'docs' })).toBe('Restore access to “docs”')
+    expect(translate('zh', 'restoreFolderPersistent', { name: 'brain-hub' })).toContain('每次访问都允许')
   })
 
   it('migrates existing settings to the default Chinese interface', () => {

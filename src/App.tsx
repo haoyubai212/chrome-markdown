@@ -9,8 +9,8 @@ import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from
 import { translate, type MessageKey } from './lib/i18n'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
-import { loadCapturedMarkdown, relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
-import { getRootHandle, loadLastPath, loadSettings, saveLastPath, saveRootHandle, saveSettings } from './lib/storage'
+import { loadCapturedMarkdown, matchingStoredDirectories, relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile, type StoredDirectoryMatch } from './lib/singleFile'
+import { getRootHandles, loadLastPath, loadSettings, saveLastPath, saveRootHandle, saveSettings } from './lib/storage'
 import type { Heading, LoadedDocument, Settings, TreeNode } from './types'
 
 const searchParams = new URLSearchParams(location.search)
@@ -20,7 +20,7 @@ const singleFileId = searchParams.get('single')
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [rootHandle, setRootHandle] = useState<FileSystemDirectoryHandle>()
-  const [savedHandle, setSavedHandle] = useState<FileSystemDirectoryHandle>()
+  const [pendingDirectories, setPendingDirectories] = useState<Array<StoredDirectoryMatch | { handle: FileSystemDirectoryHandle; relativePath?: undefined }>>([])
   const [rootName, setRootName] = useState(isDemo ? 'brain-hub' : '')
   const [tree, setTree] = useState<TreeNode[]>(isDemo ? DEMO_TREE : [])
   const [currentDocument, setCurrentDocument] = useState<LoadedDocument | null>(isDemo ? getDemoDocument() : null)
@@ -83,7 +83,7 @@ export default function App() {
       setSingleDocument(undefined)
       setSingleSource(undefined)
       setRootHandle(handle)
-      setSavedHandle(undefined)
+      setPendingDirectories([])
       setRootName(handle.name)
       setTree(root.children)
       const allFiles = flattenFiles(root.children)
@@ -114,16 +114,6 @@ export default function App() {
 
   const chooseFolder = useCallback(async () => {
     try {
-      if (savedHandle) {
-        const preferredPath = singleSource ? relativePathFromSource(singleSource.sourceUrl, savedHandle.name) : undefined
-        if (!singleSource || preferredPath) {
-          const permitted = await ensureReadPermission(savedHandle, true)
-          if (permitted) {
-            await loadDirectory(savedHandle, preferredPath ?? undefined)
-            return
-          }
-        }
-      }
       const picker = window.showDirectoryPicker
       if (!picker) throw new Error(message('unsupportedBrowser'))
       const handle = await picker({ mode: 'read', id: 'local-md-reader-folder' })
@@ -138,7 +128,30 @@ export default function App() {
       if (caught instanceof DOMException && caught.name === 'AbortError') return
       setError(caught instanceof Error ? caught.message : message('cannotOpenFolder'))
     }
-  }, [loadDirectory, message, savedHandle, singleSource])
+  }, [loadDirectory, message, singleSource])
+
+  const restoreSavedFolder = useCallback(async () => {
+    setError('')
+    try {
+      for (const candidate of pendingDirectories) {
+        const permitted = await ensureReadPermission(candidate.handle, true)
+        if (!permitted) {
+          setError(message('permissionNotGranted'))
+          return
+        }
+        if (candidate.relativePath) {
+          const matchingFile = await resolveFileHandle(candidate.handle, candidate.relativePath)
+          if (!matchingFile) continue
+        }
+        await saveRootHandle(candidate.handle)
+        await loadDirectory(candidate.handle, candidate.relativePath)
+        return
+      }
+      setError(message('savedFolderMismatch'))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : message('cannotRestoreFolder'))
+    }
+  }, [loadDirectory, message, pendingDirectories])
 
   const refresh = useCallback(async () => {
     if (isDemo) {
@@ -171,15 +184,21 @@ export default function App() {
       setHtml(rendered.html)
       setHeadings(rendered.headings)
       try {
-        const handle = await getRootHandle()
-        const preferredPath = handle ? relativePathFromSource(captured.sourceUrl, handle.name) : null
-        if (!active || !handle || !preferredPath) return
-        if (!await ensureReadPermission(handle, false)) {
-          setSavedHandle(handle)
+        const matches = matchingStoredDirectories(captured.sourceUrl, await getRootHandles())
+        const pending: StoredDirectoryMatch[] = []
+        for (const match of matches) {
+          if (!active) return
+          if (!await ensureReadPermission(match.handle, false)) {
+            pending.push(match)
+            continue
+          }
+          const matchingFile = await resolveFileHandle(match.handle, match.relativePath)
+          if (!matchingFile) continue
+          await saveRootHandle(match.handle)
+          await loadDirectory(match.handle, match.relativePath)
           return
         }
-        const matchingFile = await resolveFileHandle(handle, preferredPath)
-        if (matchingFile) await loadDirectory(handle, preferredPath)
+        if (active) setPendingDirectories(pending)
       } catch {
         // The captured file remains readable even if a previous directory handle is stale.
       }
@@ -192,13 +211,20 @@ export default function App() {
   useEffect(() => {
     if (isDemo || singleFileId) return
     let active = true
-    getRootHandle().then(async (handle) => {
-      if (!active || !handle) return
-      if (await ensureReadPermission(handle, false)) await loadDirectory(handle)
-      else {
-        setSavedHandle(handle)
-        setRootName(handle.name)
+    getRootHandles().then(async (handles) => {
+      const pending: Array<{ handle: FileSystemDirectoryHandle; relativePath?: undefined }> = []
+      for (const handle of handles) {
+        if (!active) return
+        if (await ensureReadPermission(handle, false)) {
+          await saveRootHandle(handle)
+          await loadDirectory(handle)
+          return
+        }
+        pending.push({ handle })
       }
+      if (!active || !pending.length) return
+      setPendingDirectories(pending)
+      setRootName(pending[0].handle.name)
     }).catch(() => setError(message('cannotRestoreFolder')))
     return () => { active = false }
   }, [loadDirectory, message])
@@ -248,8 +274,7 @@ export default function App() {
 
   const changeTab = useCallback((nextTab: 'files' | 'outline') => {
     setTab(nextTab)
-    if (nextTab === 'files' && singleDocument && !rootHandle) void chooseFolder()
-  }, [chooseFolder, rootHandle, singleDocument])
+  }, [])
 
   useEffect(() => {
     const move = (event: PointerEvent) => {
@@ -264,11 +289,11 @@ export default function App() {
 
   return (
     <div className="app-shell" data-theme={settings.theme} style={{ '--sidebar-width': `${settings.sidebarWidth}px` } as React.CSSProperties}>
-      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(singleFileId && !rootHandle)} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onChooseFolder={chooseFolder} />
+      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(singleFileId && !rootHandle)} restoreFolderName={pendingDirectories[0]?.handle.name} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onChooseFolder={chooseFolder} onRestoreFolder={restoreSavedFolder} />
       <div className="resize-handle" onPointerDown={() => { resizing.current = true; globalThis.document.body.classList.add('is-resizing') }} />
       <section className="workspace">
         <TopBar rootName={rootName} path={currentDocument?.path ?? ''} theme={settings.theme} language={settings.language} loading={loading} onThemeToggle={() => setSettings((current) => ({ ...current, theme: current.theme === 'dark' ? 'light' : 'dark' }))} onRefresh={refresh} onSettings={() => setShowSettings(true)} />
-        {savedHandle && !rootHandle ? <button className="permission-banner" onClick={chooseFolder}><FolderOpen size={17} /> {message('restoreFolder', { name: savedHandle.name })}</button> : null}
+        {pendingDirectories.length && !rootHandle ? <button className="permission-banner" onClick={restoreSavedFolder}><FolderOpen size={17} /> {message('restoreFolderPersistent', { name: pendingDirectories[0].handle.name })}</button> : null}
         {error ? <div className="error-banner"><AlertCircle size={17} /> <span>{error}</span><button onClick={() => setError('')}>{message('close')}</button></div> : null}
         <Reader document={currentDocument} html={html} rootHandle={rootHandle} fontSize={settings.fontSize} language={settings.language} onOpenPath={openPath} />
       </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loadCapturedMarkdown, relativePathFromSource, singleFileStorageKey, toLoadedDocument } from '../src/lib/singleFile'
+import { loadCapturedMarkdown, matchingStoredDirectories, relativePathFromSource, singleFileStorageKey, toLoadedDocument } from '../src/lib/singleFile'
 
 describe('single-file handoff', () => {
   it('loads a captured file from extension session storage', async () => {
@@ -23,5 +23,14 @@ describe('single-file handoff', () => {
     expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'brain-hub')).toBe('docs/plan.md')
     expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'docs')).toBe('plan.md')
     expect(relativePathFromSource('file:///Users/test/brain-hub/docs/plan.md', 'other')).toBeNull()
+  })
+
+  it('matches all remembered directories that can contain the opened file', () => {
+    const handles = [{ name: 'other' }, { name: 'brain-hub' }, { name: 'docs' }] as FileSystemDirectoryHandle[]
+    const matches = matchingStoredDirectories('file:///Users/test/brain-hub/docs/plan.md', handles)
+    expect(matches.map(({ handle, relativePath }) => [handle.name, relativePath])).toEqual([
+      ['brain-hub', 'docs/plan.md'],
+      ['docs', 'plan.md'],
+    ])
   })
 })

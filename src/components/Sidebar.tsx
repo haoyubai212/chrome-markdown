@@ -12,14 +12,20 @@ type SidebarProps = {
   query: string
   language: Language
   singleFileMode: boolean
+  restoreFolderName?: string
   onTabChange: (tab: 'files' | 'outline') => void
   onQueryChange: (query: string) => void
   onOpen: (path: string) => void
   onChooseFolder: () => void
+  onRestoreFolder: () => void
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { rootName, tree, activePath, headings, tab, query, language, singleFileMode, onTabChange, onQueryChange, onOpen, onChooseFolder } = props
+  const { rootName, tree, activePath, headings, tab, query, language, singleFileMode, restoreFolderName, onTabChange, onQueryChange, onOpen, onChooseFolder, onRestoreFolder } = props
+  const folderAction = restoreFolderName ? onRestoreFolder : onChooseFolder
+  const folderActionLabel = restoreFolderName
+    ? translate(language, 'restoreFolderShort', { name: restoreFolderName })
+    : translate(language, singleFileMode ? 'loadContainingFolder' : 'switchFolder')
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -62,7 +68,7 @@ export function Sidebar(props: SidebarProps) {
           </nav>
         )}
       </div>
-      <button className="change-folder" onClick={onChooseFolder} title={translate(language, singleFileMode ? 'loadContainingFolder' : 'switchFolder')}><FolderTree size={16} /> {translate(language, singleFileMode ? 'loadContainingFolder' : 'switchFolder')}</button>
+      <button className="change-folder" onClick={folderAction} title={folderActionLabel}><FolderTree size={16} /> {folderActionLabel}</button>
     </aside>
   )
 }

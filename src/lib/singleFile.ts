@@ -48,3 +48,15 @@ export function relativePathFromSource(sourceUrl: string, directoryName: string)
     return null
   }
 }
+
+export type StoredDirectoryMatch = {
+  handle: FileSystemDirectoryHandle
+  relativePath: string
+}
+
+export function matchingStoredDirectories(sourceUrl: string, handles: FileSystemDirectoryHandle[]): StoredDirectoryMatch[] {
+  return handles.flatMap((handle) => {
+    const relativePath = relativePathFromSource(sourceUrl, handle.name)
+    return relativePath ? [{ handle, relativePath }] : []
+  })
+}

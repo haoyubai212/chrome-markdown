@@ -5,7 +5,10 @@ interface FileSystemHandlePermissionDescriptor {
 }
 
 interface FileSystemDirectoryHandle {
+  readonly kind: 'directory'
+  readonly name: string
   entries(): AsyncIterableIterator<[string, FileSystemFileHandle | FileSystemDirectoryHandle]>
+  isSameEntry(other: FileSystemHandle): Promise<boolean>
 }
 
 interface Window {
