@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Local MD Reader",
   "description": "A private, fully local Markdown folder reader.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minimum_chrome_version": "109",
   "action": {
     "default_title": "Open Local MD Reader"
