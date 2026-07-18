@@ -134,8 +134,8 @@ button { color: inherit; }
 .change-folder:hover { color: var(--text); background: var(--surface-strong); }
 
 .outline-list { display: flex; flex-direction: column; padding: 6px; }
-.outline-list a { padding-block: 7px; border-radius: 5px; color: var(--muted); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.outline-list a:hover { color: var(--blue); background: var(--surface-strong); }
+.outline-list button { width: 100%; padding-block: 7px; border: 0; border-radius: 5px; color: var(--muted); text-align: left; background: transparent; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.outline-list button:hover { color: var(--blue); background: var(--surface-strong); }
 .muted-message { padding: 24px 14px; color: var(--muted); text-align: center; }
 
 .resize-handle { z-index: 4; width: 1px; background: var(--line); cursor: col-resize; }

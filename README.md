@@ -38,7 +38,7 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 chrome-markdown-1.0.0.zip
+npm run package      # 生成 chrome-markdown-1.0.1.zip
 ```
 
 ## 隐私与安全边界

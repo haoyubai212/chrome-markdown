@@ -1,4 +1,5 @@
 import { FileText, FolderTree, ListTree, Search, X } from 'lucide-react'
+import { scrollToHeading } from '../lib/documentNavigation'
 import { translate } from '../lib/i18n'
 import type { Heading, Language, TreeNode } from '../types'
 import { FileTree } from './FileTree'
@@ -65,7 +66,7 @@ export function Sidebar(props: SidebarProps) {
         ) : (
           <nav className="outline-list" aria-label={translate(language, 'documentOutline')}>
             {headings.length ? headings.map((heading) => (
-              <a key={heading.id} href={`#${heading.id}`} style={{ paddingInlineStart: 12 + (heading.level - 1) * 14 }}>{heading.text}</a>
+              <button key={heading.id} type="button" onClick={() => scrollToHeading(heading.id)} style={{ paddingInlineStart: 12 + (heading.level - 1) * 14 }}>{heading.text}</button>
             )) : <p className="muted-message">{translate(language, 'noHeadings')}</p>}
           </nav>
         )}

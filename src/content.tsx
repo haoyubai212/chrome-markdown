@@ -6,6 +6,7 @@ import appStyles from './styles/app.css?inline'
 import App from './App'
 import { captureMarkdownDocument } from './lib/contentSource'
 import { applyReaderTitle, installReaderFavicon } from './lib/documentMetadata'
+import { clearDocumentHash } from './lib/documentNavigation'
 import { loadPersistedSettings } from './lib/storage'
 
 function revealDocument() {
@@ -18,6 +19,8 @@ async function mountReader() {
     revealDocument()
     return
   }
+
+  clearDocumentHash()
 
   if (document.getElementById('root')) {
     revealDocument()

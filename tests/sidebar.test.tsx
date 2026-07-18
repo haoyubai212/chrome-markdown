@@ -53,4 +53,29 @@ describe('Sidebar folder authorization', () => {
     expect(html).toContain('aria-expanded="false"')
     expect(html).toContain('wiki')
   })
+
+  it('renders outline entries without hash links', () => {
+    const html = renderToStaticMarkup(
+      <Sidebar
+        rootName="brain-hub"
+        tree={[]}
+        activePath="AGENT.md"
+        headings={[{ id: 'memory-rules', level: 2, text: '记忆行为规范' }]}
+        tab="outline"
+        query=""
+        language="zh"
+        singleFileMode
+        showFolderAction={false}
+        onTabChange={() => undefined}
+        onQueryChange={() => undefined}
+        onOpen={() => undefined}
+        onExpandDirectory={async () => undefined}
+        onChooseFolder={() => undefined}
+        onRestoreFolder={() => undefined}
+      />,
+    )
+    expect(html).toContain('<button')
+    expect(html).toContain('记忆行为规范')
+    expect(html).not.toContain('href="#memory-rules"')
+  })
 })

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { scrollToHeading } from '../lib/documentNavigation'
 import { translate } from '../lib/i18n'
 import type { Language, LoadedDocument } from '../types'
 import { readAssetUrl } from '../lib/filesystem'
@@ -70,7 +71,11 @@ export function Reader({ document, html, rootHandle, localSourceUrl, fontSize, l
     const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a')
     if (!anchor || !document) return
     const href = anchor.getAttribute('href') ?? ''
-    if (href.startsWith('#')) return
+    if (href.startsWith('#')) {
+      event.preventDefault()
+      scrollToHeading(href.slice(1))
+      return
+    }
     const resolved = resolveRelativePath(document.path, href)
     if (!resolved || !isMarkdownFile(resolved)) return
     event.preventDefault()
