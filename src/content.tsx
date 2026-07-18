@@ -25,7 +25,7 @@ async function mountReader() {
   }
 
   installReaderFavicon(document, chrome.runtime.getURL('icons/icon-32.png'))
-  applyReaderTitle(document, initialFile.name)
+  applyReaderTitle(document)
 
   const style = document.createElement('style')
   style.dataset.localMdReader = 'styles'

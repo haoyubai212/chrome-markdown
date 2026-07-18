@@ -274,7 +274,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
   }, [settings])
 
   useEffect(() => {
-    applyReaderTitle(document, currentDocument?.name)
+    applyReaderTitle(document)
   }, [currentDocument?.name])
 
   useEffect(() => {

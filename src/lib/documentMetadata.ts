@@ -38,6 +38,6 @@ export function installReaderFavicon(sourceDocument: Document, iconUrl: string):
   return () => observer.disconnect()
 }
 
-export function applyReaderTitle(sourceDocument: Document, fileName?: string): void {
-  sourceDocument.title = fileName ? `${fileName} — Local MD Reader` : 'Local MD Reader'
+export function applyReaderTitle(sourceDocument: Document): void {
+  sourceDocument.title = 'Local MD Reader'
 }

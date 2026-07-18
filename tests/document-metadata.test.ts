@@ -28,8 +28,8 @@ describe('reader document metadata', () => {
     disconnect()
   })
 
-  it('keeps the selected Markdown filename in the tab title', () => {
-    applyReaderTitle(document, 'AGENT.md')
-    expect(document.title).toBe('AGENT.md — Local MD Reader')
+  it('keeps the tab title fixed to the product name', () => {
+    applyReaderTitle(document)
+    expect(document.title).toBe('Local MD Reader')
   })
 })
