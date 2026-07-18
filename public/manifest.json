@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Local MD Reader",
+  "description": "A private, fully local Markdown folder reader.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "109",
+  "action": {
+    "default_title": "Open Local MD Reader"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'none'; img-src 'self' blob: data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'"
+  }
+}
