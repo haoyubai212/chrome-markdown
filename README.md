@@ -1,55 +1,73 @@
 # Chrome Markdown
 
-一个 clean-room、完全本地、只读的 Chrome Markdown 文件夹阅读器。它不依赖账号、订阅或后端服务，也不包含从其他扩展复制的代码或资产。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 功能
+A fast, local, and read-only Markdown reader for Chrome. Open a Markdown file directly in the browser and browse the rest of its folder from a clean file tree.
 
-- 直接打开任意本地 Markdown 时，自动读取该文件所在文件夹并显示目录树，无需再选择文件夹
-- 打开当前文件时立即显示父目录的 Markdown 与文件夹，子目录在展开时按层加载
-- Markdown 目录树、文件名搜索、文档大纲
-- GFM、代码高亮、KaTeX、Mermaid
-- YAML Frontmatter 属性卡片（数组值自动显示为标签，且不污染文档大纲）
-- 相对 Markdown 链接和本地图片
-- Chrome 直接打开本地 `.md/.markdown/.mdx` 文件时自动进入单文件阅读模式
-- 浏览器地址栏保留最初打开文件的真实 `file://` 地址；从侧栏切换 Markdown 时只在当前页面替换正文，不触发整页导航或闪烁
-- 内部路径栏始终显示当前文档，并提供复制按钮，一键复制当前文件的完整 `file://` 地址
-- 默认显示文件目录；需要时可随时切换到文档大纲
-- 文件变化自动刷新、浅色/深色双选按钮、字号和侧栏宽度设置
-- 中文 / English 界面切换
-- DOMPurify 清洗 HTML；所有功能离线运行
-- 只申请 Chrome `storage` 权限；文件网址访问仅用于用户在 Chrome 中主动打开的本地 Markdown
+![Chrome Markdown](design/browser-final.png)
 
-## 安装
+## Features
 
-1. 执行 `npm install && npm run build`。
-2. 打开 `chrome://extensions`，开启“开发者模式”。
-3. 点击“加载已解压的扩展程序”，选择本项目的 `dist/` 文件夹。
-4. 在扩展详情中开启“允许访问文件网址”，以便直接打开本地 Markdown。
-5. 用 Chrome 打开任意本地 `.md` 文件；Chrome Markdown 会自动接管渲染。
+- Open local `.md`, `.markdown`, and `.mdx` files directly in Chrome
+- Browse Markdown files and folders from the opened file's parent directory
+- Lazy-load subfolders for fast startup in large repositories
+- Search files or switch to a document outline
+- Render GFM, syntax-highlighted code, KaTeX, Mermaid, and YAML frontmatter
+- Resolve relative Markdown links and local images
+- Switch files in place without a full-page flash
+- Keep the browser URL fixed on the file while navigating headings
+- Copy the current document's complete `file://` URL from the path bar
+- Auto-refresh changed files
+- Light and dark themes, adjustable text size and sidebar width
+- English and Simplified Chinese interface
 
-直接打开本地 Markdown 不使用系统目录选择器。扩展以当前文件的父目录为根，立即读取并显示这一层的 Markdown 与文件夹；展开某个文件夹时才读取下一层，因此大目录也能快速出现，不会先卡在临时单文件视图，也不会弹出逐项目授权窗口。
+## Install
 
-左侧默认显示当前文件所在文件夹；点击“大纲”可以查看文档标题结构。工具栏打开的独立阅读页仍保留“打开文件夹”，用于主动浏览其他目录；只有这个显式操作才会调用 Chrome 的文件夹选择器。
+### From a release
 
-## 开发与验收
+1. Download and extract the ZIP from the [latest release](https://github.com/haoyubai212/chrome-markdown/releases/latest).
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Select **Load unpacked** and choose the extracted folder.
+4. Open the extension details and enable **Allow access to file URLs**.
+5. Open any local Markdown file in Chrome.
+
+### From source
 
 ```bash
-npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
+npm install
+npm run build
+```
+
+Then load the generated `dist/` folder from `chrome://extensions`.
+
+## How folder browsing works
+
+When Chrome opens a local Markdown file, Chrome Markdown uses that file's parent directory as the tree root. The first level appears immediately, and each subfolder is read only when you expand it. Direct file opening does not show a system folder picker.
+
+Selecting another file updates the reader in place. The browser address remains the originally opened file URL, while the internal path bar shows the active document and provides a button to copy its complete address.
+
+The extension toolbar also opens a standalone reader where you can explicitly choose another folder.
+
+## Privacy and permissions
+
+- Files are read locally and are never uploaded.
+- The extension is read-only and does not modify your files.
+- No telemetry, remote scripts, or remote API calls.
+- Chrome's `storage` permission stores reader settings; optional folder handles stay in browser IndexedDB.
+- Local file access is used only for Markdown files you open and their descendant directories.
+- `.git`, `node_modules`, `dist`, and `build` are always ignored; other hidden folders are hidden by default.
+- Rendered HTML is sanitized with DOMPurify, and Mermaid runs with `securityLevel: strict`.
+
+## Development
+
+```bash
+npm run dev       # http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 chrome-markdown-1.0.1.zip
+npm run package   # chrome-markdown-1.0.1.zip
 ```
 
-## 隐私与安全边界
+## License
 
-- 只读取用户在 Chrome 中主动打开的 Markdown 所在父目录及其子目录；或用户在独立阅读页中明确选择的目录。
-- 直接打开单个本地 Markdown 时，Content Script 在当前 `file://` 页面挂载普通 React 根节点；不跳转内部扩展页，也不使用存储中转文件内容。
-- 不写入文件，不上传内容，不加载远程脚本，不发送遥测。
-- 扩展不包含远程 API；CSP 只允许扩展自身及本地 `file:` 读取。外部链接只有在用户主动点击后才交给新标签页。
-- `.git`、`node_modules`、`dist`、`build` 默认永远忽略；其他隐藏目录默认隐藏，可在设置中显示。
-- Markdown 内嵌 HTML 会先经过 DOMPurify，且明确移除 `<style>` 与 `<link>`，避免正文样式影响阅读器界面；Mermaid 使用 `securityLevel: strict`。
-
-## Clean-room 说明
-
-本项目是 clean-room 独立实现：参考本地 Markdown 阅读器可观察到的产品行为及浏览器扩展运行机制，但没有修改第三方扩展的订阅校验、调用其后端或复制其代码与资产。
+[MIT](LICENSE)
