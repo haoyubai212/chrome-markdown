@@ -6,6 +6,7 @@ export type FileNode = {
   name: string
   path: string
   handle?: FileSystemFileHandle
+  url?: string
 }
 
 export type DirectoryNode = {
@@ -13,7 +14,9 @@ export type DirectoryNode = {
   name: string
   path: string
   handle?: FileSystemDirectoryHandle
+  url?: string
   children: TreeNode[]
+  loaded?: boolean
 }
 
 export type TreeNode = FileNode | DirectoryNode
@@ -24,6 +27,7 @@ export type LoadedDocument = {
   markdown: string
   lastModified: number
   fileHandle?: FileSystemFileHandle
+  sourceUrl?: string
 }
 
 export type Heading = {

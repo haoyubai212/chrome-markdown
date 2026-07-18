@@ -35,6 +35,7 @@ export function toLoadedDocument(file: CapturedMarkdownFile): LoadedDocument {
     name: file.name,
     markdown: file.markdown,
     lastModified: file.lastModified ?? Date.now(),
+    sourceUrl: file.sourceUrl,
   }
 }
 
@@ -47,16 +48,4 @@ export function relativePathFromSource(sourceUrl: string, directoryName: string)
   } catch {
     return null
   }
-}
-
-export type StoredDirectoryMatch = {
-  handle: FileSystemDirectoryHandle
-  relativePath: string
-}
-
-export function matchingStoredDirectories(sourceUrl: string, handles: FileSystemDirectoryHandle[]): StoredDirectoryMatch[] {
-  return handles.flatMap((handle) => {
-    const relativePath = relativePathFromSource(sourceUrl, handle.name)
-    return relativePath ? [{ handle, relativePath }] : []
-  })
 }

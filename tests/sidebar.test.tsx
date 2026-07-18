@@ -18,6 +18,7 @@ describe('Sidebar folder authorization', () => {
         onTabChange={() => undefined}
         onQueryChange={() => undefined}
         onOpen={() => undefined}
+        onExpandDirectory={async () => undefined}
         onChooseFolder={() => undefined}
         onRestoreFolder={() => undefined}
       />,

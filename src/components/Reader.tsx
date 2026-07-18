@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { translate } from '../lib/i18n'
 import type { Language, LoadedDocument } from '../types'
 import { readAssetUrl } from '../lib/filesystem'
+import { isAllowedLocalTarget, readLocalAsset } from '../lib/localFiles'
 import { isImageFile, isMarkdownFile, resolveRelativePath } from '../lib/paths'
 
 type ReaderProps = {
   document: LoadedDocument | null
   html: string
   rootHandle?: FileSystemDirectoryHandle
+  localSourceUrl?: string
   fontSize: number
   language: Language
   onOpenPath: (path: string) => void
@@ -15,7 +17,7 @@ type ReaderProps = {
 
 let mermaidInitialized = false
 
-export function Reader({ document, html, rootHandle, fontSize, language, onOpenPath }: ReaderProps) {
+export function Reader({ document, html, rootHandle, localSourceUrl, fontSize, language, onOpenPath }: ReaderProps) {
   const articleRef = useRef<HTMLElement>(null)
   const [renderError, setRenderError] = useState('')
 
@@ -26,13 +28,18 @@ export function Reader({ document, html, rootHandle, fontSize, language, onOpenP
     let cancelled = false
 
     async function hydrateAssets() {
-      if (!rootHandle) return
       const images = Array.from(article!.querySelectorAll<HTMLImageElement>('img'))
       await Promise.all(images.map(async (image) => {
         const source = image.getAttribute('src') ?? ''
         const resolved = resolveRelativePath(document!.path, source)
         if (!resolved || !isImageFile(resolved)) return
-        const url = await readAssetUrl(rootHandle, resolved, objectUrls)
+        let url: string | null = null
+        if (rootHandle) {
+          url = await readAssetUrl(rootHandle, resolved, objectUrls)
+        } else if (localSourceUrl && document!.sourceUrl) {
+          const targetUrl = new URL(source, document!.sourceUrl).href
+          if (isAllowedLocalTarget(localSourceUrl, targetUrl, 'asset')) url = await readLocalAsset(localSourceUrl, targetUrl)
+        }
         if (!cancelled && url) image.src = url
       }))
     }
@@ -57,7 +64,7 @@ export function Reader({ document, html, rootHandle, fontSize, language, onOpenP
       cancelled = true
       objectUrls.forEach((url) => URL.revokeObjectURL(url))
     }
-  }, [document, html, language, rootHandle])
+  }, [document, html, language, localSourceUrl, rootHandle])
 
   function handleClick(event: React.MouseEvent<HTMLElement>) {
     const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a')
