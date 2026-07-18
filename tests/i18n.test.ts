@@ -18,4 +18,14 @@ describe('interface language', () => {
     expect(loadSettings()).toMatchObject({ language: 'zh', theme: 'dark', fontSize: 20 })
     vi.unstubAllGlobals()
   })
+
+  it('migrates the retired system theme to light', () => {
+    const values = new Map([['local-md-reader-settings-v1', JSON.stringify({ theme: 'system', language: 'en' })]])
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    expect(loadSettings()).toMatchObject({ language: 'en', theme: 'light' })
+    vi.unstubAllGlobals()
+  })
 })

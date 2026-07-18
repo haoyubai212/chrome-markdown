@@ -29,7 +29,7 @@ export async function getRootHandle(): Promise<FileSystemDirectoryHandle | undef
 export function loadSettings(): Settings {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Partial<Settings>
-    return { ...DEFAULT_SETTINGS, ...saved }
+    return { ...DEFAULT_SETTINGS, ...saved, theme: saved.theme === 'dark' ? 'dark' : 'light' }
   } catch {
     return DEFAULT_SETTINGS
   }

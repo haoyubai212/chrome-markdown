@@ -7,10 +7,11 @@
 - 一次授权文件夹，目录句柄保存在浏览器本地 IndexedDB
 - Markdown 目录树、文件名搜索、文档大纲
 - GFM、代码高亮、KaTeX、Mermaid
+- YAML Frontmatter 属性卡片（数组值自动显示为标签，且不污染文档大纲）
 - 相对 Markdown 链接和本地图片
 - Chrome 直接打开本地 `.md/.markdown/.mdx` 文件时自动进入单文件阅读模式
 - 单文件模式默认显示文档大纲；“文件”页可加载并记住当前文件所在目录
-- 文件变化自动刷新、浅色/深色主题、字号和侧栏宽度设置
+- 文件变化自动刷新、浅色/深色双选按钮、字号和侧栏宽度设置
 - 中文 / English 界面切换
 - DOMPurify 清洗 HTML；所有功能离线运行
 - 只申请 Chrome `storage` 权限；文件网址访问仅用于用户在 Chrome 中主动打开的本地 Markdown
@@ -34,7 +35,7 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-0.1.4.zip
+npm run package      # 生成 local-md-reader-0.1.5.zip
 ```
 
 ## 隐私与安全边界

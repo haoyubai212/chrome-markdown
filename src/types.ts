@@ -1,4 +1,4 @@
-export type Theme = 'system' | 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 export type Language = 'zh' | 'en'
 
 export type FileNode = {
@@ -42,7 +42,7 @@ export type Settings = {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'system',
+  theme: 'light',
   language: 'zh',
   fontSize: 18,
   sidebarWidth: 340,

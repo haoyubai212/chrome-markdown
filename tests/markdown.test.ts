@@ -26,4 +26,27 @@ describe('Markdown renderer', () => {
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
   })
+
+  it('renders YAML frontmatter as properties without adding it to the outline', async () => {
+    const result = await renderMarkdown(`---
+title: Claude Corps Fellow 申请
+type: project
+status: 活跃
+tags: [求职, Claude-Corps, AI]
+updated: 2026-07-18
+---
+
+# Claude Corps Fellow 申请`)
+    expect(result.html).toContain('frontmatter-card')
+    expect(result.html).toContain('frontmatter-chip')
+    expect(result.html).toContain('Claude-Corps')
+    expect(result.headings).toEqual([{ id: 'claude-corps-fellow-申请', level: 1, text: 'Claude Corps Fellow 申请' }])
+  })
+
+  it('escapes HTML embedded in frontmatter values', async () => {
+    const result = await renderMarkdown(`---\ntitle: <img src=x onerror=alert(1)>\n---\n\n# Safe`)
+    const document = new DOMParser().parseFromString(result.html, 'text/html')
+    expect(document.querySelector('.frontmatter-card img')).toBeNull()
+    expect(result.html).toContain('&lt;img')
+  })
 })

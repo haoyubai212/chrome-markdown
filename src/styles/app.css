@@ -47,22 +47,6 @@ button { color: inherit; }
   --code-bg: #23262c;
 }
 
-@media (prefers-color-scheme: dark) {
-  .app-shell[data-theme="system"] {
-    --bg: #191b1f;
-    --surface: #202329;
-    --surface-strong: #2b2f36;
-    --line: #353a43;
-    --line-soft: #2b2f36;
-    --text: #ebedf0;
-    --muted: #9ca3ae;
-    --blue: #7c9cff;
-    --blue-soft: #263256;
-    --green: #56c985;
-    --code-bg: #23262c;
-  }
-}
-
 .sidebar {
   position: relative;
   display: flex;
@@ -215,13 +199,37 @@ body.is-resizing { cursor: col-resize; user-select: none; }
 .markdown-body input[type="checkbox"] { margin-right: .5em; }
 .mermaid-container { overflow: auto !important; text-align: center; background: var(--bg) !important; }
 
+.frontmatter-card {
+  margin: 0 0 38px;
+  padding: 4px 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface), transparent 18%);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: .76em;
+  line-height: 1.5;
+}
+.frontmatter-card dl { margin: 0; }
+.frontmatter-row { display: grid; grid-template-columns: minmax(82px, .26fr) minmax(0, 1fr); gap: 16px; padding: 9px 0; }
+.frontmatter-row + .frontmatter-row { border-top: 1px solid var(--line-soft); }
+.frontmatter-row dt { color: var(--muted); font-weight: 600; }
+.frontmatter-row dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.frontmatter-values { display: flex; flex-wrap: wrap; gap: 6px; }
+.frontmatter-chip { padding: 2px 8px; border-radius: 999px; color: var(--blue); background: var(--blue-soft); font-size: .92em; }
+.frontmatter-raw { margin: 0; padding: 10px 0; overflow: auto; color: var(--muted); background: transparent; font-size: .92em; white-space: pre-wrap; }
+
 .settings-scrim { z-index: 20; position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(20 24 31 / 38%); backdrop-filter: blur(2px); }
 .settings-panel { width: min(420px, 100%); padding: 20px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: var(--bg); box-shadow: 0 20px 60px rgb(0 0 0 / 22%); }
 .settings-panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .settings-panel h2 { margin: 0; font-size: 18px; }
-.settings-panel > label { display: grid; gap: 9px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.settings-panel > label, .setting-field { display: grid; gap: 9px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
 .settings-panel label > span { display: flex; justify-content: space-between; }
-.settings-panel select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--text); background: var(--surface); }
+.setting-segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.setting-segmented button { height: 34px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease; }
+.setting-segmented button:hover { color: var(--text); }
+.setting-segmented button.is-active { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px rgb(0 0 0 / 12%); font-weight: 600; }
+.setting-segmented button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 .settings-panel input[type="range"] { accent-color: var(--blue); }
 .settings-panel .toggle-row { display: flex; align-items: center; justify-content: space-between; }
 .settings-panel input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); }
@@ -229,4 +237,5 @@ body.is-resizing { cursor: col-resize; user-select: none; }
 @media (max-width: 760px) {
   .app-shell { --sidebar-width: 270px !important; }
   .markdown-body { width: calc(100% - 40px); padding-top: 36px; }
+  .frontmatter-row { grid-template-columns: 1fr; gap: 4px; }
 }

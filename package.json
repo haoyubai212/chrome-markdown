@@ -1,7 +1,7 @@
 {
   "name": "local-md-reader",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run --environment jsdom",
     "test:watch": "vitest --environment jsdom",
-    "package": "npm run build && cd dist && zip -qr ../local-md-reader-0.1.4.zip ."
+    "package": "npm run build && cd dist && zip -qr ../local-md-reader-0.1.5.zip ."
   },
   "dependencies": {
     "dompurify": "^3.3.0",
@@ -22,7 +22,8 @@
     "marked-katex-extension": "^5.1.4",
     "mermaid": "^11.4.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

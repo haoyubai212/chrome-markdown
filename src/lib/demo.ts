@@ -20,7 +20,15 @@ export const DEMO_TREE: TreeNode[] = [
   { kind: 'directory', name: 'tools', path: 'tools', children: [{ kind: 'file', name: 'README.md', path: 'tools/README.md' }] },
 ]
 
-const markdown = `# Brain-Hub 知识操作系统
+const markdown = `---
+title: Brain-Hub 知识操作系统
+type: project
+status: 活跃
+tags: [Markdown, Agent, 本地工具]
+updated: 2026-07-18
+---
+
+# Brain-Hub 知识操作系统
 
 > Brain-Hub 是 User 和 Agent 的共享知识地基。你（Agent）是这个 wiki 的主要维护者。用户负责策展、提问、引导方向。你负责所有记账工作——总结、交叉引用、归档、维护。
 
