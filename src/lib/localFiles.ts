@@ -124,6 +124,36 @@ export async function readLocalDirectory(
   return parseChromeDirectoryIndex(html, directoryUrl, parentPath, showHidden)
 }
 
+async function hydrateLocalDirectoryTree(
+  sourceUrl: string,
+  nodes: TreeNode[],
+  showHidden: boolean,
+  visited: Set<string>,
+): Promise<TreeNode[]> {
+  const hydrated = await Promise.all(nodes.map(async (node): Promise<TreeNode | null> => {
+    if (node.kind === 'file') return node
+    if (!node.url || visited.has(node.url)) return null
+    visited.add(node.url)
+    try {
+      const children = await readLocalDirectory(sourceUrl, node.url, node.path, showHidden)
+      const nested = await hydrateLocalDirectoryTree(sourceUrl, children, showHidden, visited)
+      return nested.length ? { ...node, children: nested, loaded: true } : null
+    } catch {
+      return null
+    }
+  }))
+  return hydrated.filter((node): node is TreeNode => node !== null)
+}
+
+export async function readLocalDirectoryTree(
+  sourceUrl: string,
+  directoryUrl: string,
+  showHidden = false,
+): Promise<TreeNode[]> {
+  const root = await readLocalDirectory(sourceUrl, directoryUrl, '', showHidden)
+  return hydrateLocalDirectoryTree(sourceUrl, root, showHidden, new Set([directoryUrl]))
+}
+
 export function readLocalMarkdown(sourceUrl: string, targetUrl: string): Promise<string> {
   return readLocalUrl(sourceUrl, targetUrl, 'markdown')
 }

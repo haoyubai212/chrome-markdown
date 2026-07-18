@@ -7,7 +7,7 @@ import { TopBar } from './components/TopBar'
 import { DEMO_TREE, getDemoDocument } from './lib/demo'
 import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from './lib/filesystem'
 import { translate, type MessageKey } from './lib/i18n'
-import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
+import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalDirectoryTree, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
 import { relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
@@ -185,7 +185,7 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
       return
     }
     if (localRootUrl && singleSource) {
-      const refreshedTree = await readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', showHiddenRef.current)
+      const refreshedTree = await readLocalDirectoryTree(singleSource.sourceUrl, localRootUrl, showHiddenRef.current)
       setTree(refreshedTree)
       if (currentDocument) await openPath(currentDocument.path)
       return
@@ -207,19 +207,20 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
       if (!active) return
       const next = toLoadedDocument(captured)
       const directoryUrl = parentDirectoryUrl(captured.sourceUrl)
-      const [rendered, localTree] = await Promise.all([
-        renderMarkdown(next.markdown),
-        readLocalDirectory(captured.sourceUrl, directoryUrl, '', showHiddenRef.current).catch(() => null),
-      ])
+      const rendered = await renderMarkdown(next.markdown)
       if (!active) return
       setSingleSource(captured)
       setSingleDocument(next)
       setRootName(captured.parentName)
-      setLocalRootUrl(localTree ? directoryUrl : undefined)
-      setTree(localTree ?? [{ kind: 'file', name: next.name, path: next.path, url: captured.sourceUrl }])
+      setLocalRootUrl(undefined)
+      setTree([{ kind: 'file', name: next.name, path: next.path, url: captured.sourceUrl }])
       setCurrentDocument(next)
       setHtml(rendered.html)
       setHeadings(rendered.headings)
+      const localTree = await readLocalDirectoryTree(captured.sourceUrl, directoryUrl, showHiddenRef.current).catch(() => null)
+      if (!active || !localTree) return
+      setLocalRootUrl(directoryUrl)
+      setTree(localTree)
     }).catch(() => {
       if (active) setError(message('cannotReadSingle'))
     })
@@ -277,7 +278,7 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
     previousShowHidden.current = settings.showHidden
     if (rootHandle) void loadDirectory(rootHandle)
     else if (localRootUrl && singleSource) {
-      void readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', settings.showHidden)
+      void readLocalDirectoryTree(singleSource.sourceUrl, localRootUrl, settings.showHidden)
         .then(setTree)
         .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : message('readFolderFailed')))
     }

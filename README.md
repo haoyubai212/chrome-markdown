@@ -5,7 +5,7 @@
 ## 功能
 
 - 直接打开任意本地 Markdown 时，自动读取该文件所在文件夹并显示目录树，无需再选择文件夹
-- 子目录按展开时加载，避免启动时扫描整个项目
+- 以当前文件所在文件夹为根递归扫描所有 Markdown，并过滤不含 Markdown 的空目录分支
 - Markdown 目录树、文件名搜索、文档大纲
 - GFM、代码高亮、KaTeX、Mermaid
 - YAML Frontmatter 属性卡片（数组值自动显示为标签，且不污染文档大纲）
@@ -26,7 +26,7 @@
 4. 在扩展详情中开启“允许访问文件网址”，以便直接打开本地 Markdown。
 5. 用 Chrome 打开任意本地 `.md` 文件；Local MD Reader 会自动接管渲染。
 
-直接打开本地 Markdown 不使用系统目录选择器。扩展只读取当前文件所在的父目录索引，并在你展开子目录时继续读取其内容；因此左侧文件树会直接出现，也不会弹出逐项目授权窗口。
+直接打开本地 Markdown 不使用系统目录选择器。扩展以当前文件的父目录为根，递归读取所有子目录中的 Markdown；因此完整文件树和跨目录搜索会直接可用，也不会弹出逐项目授权窗口。
 
 左侧默认显示当前文件所在文件夹；点击“大纲”可以查看文档标题结构。工具栏打开的独立阅读页仍保留“打开文件夹”，用于主动浏览其他目录；只有这个显式操作才会调用 Chrome 的文件夹选择器。
 
@@ -37,7 +37,7 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-0.3.1.zip
+npm run package      # 生成 local-md-reader-0.3.2.zip
 ```
 
 ## 隐私与安全边界
