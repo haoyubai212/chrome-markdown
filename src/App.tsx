@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { DEMO_TREE, getDemoDocument } from './lib/demo'
 import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from './lib/filesystem'
+import { folderAccessActionForTab } from './lib/folderAccess'
 import { translate, type MessageKey } from './lib/i18n'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
@@ -274,7 +275,10 @@ export default function App() {
 
   const changeTab = useCallback((nextTab: 'files' | 'outline') => {
     setTab(nextTab)
-  }, [])
+    const folderAction = folderAccessActionForTab(nextTab, Boolean(singleDocument && !rootHandle), pendingDirectories.length > 0)
+    if (folderAction === 'restore') void restoreSavedFolder()
+    if (folderAction === 'choose') void chooseFolder()
+  }, [chooseFolder, pendingDirectories.length, restoreSavedFolder, rootHandle, singleDocument])
 
   useEffect(() => {
     const move = (event: PointerEvent) => {
