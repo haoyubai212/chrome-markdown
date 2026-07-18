@@ -35,7 +35,7 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
   const [singleSource, setSingleSource] = useState<CapturedMarkdownFile>()
   const [html, setHtml] = useState('')
   const [headings, setHeadings] = useState<Heading[]>([])
-  const [tab, setTab] = useState<'files' | 'outline'>(initialFile ? 'outline' : 'files')
+  const [tab, setTab] = useState<'files' | 'outline'>('files')
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

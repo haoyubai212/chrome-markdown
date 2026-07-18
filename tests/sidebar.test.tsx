@@ -26,5 +26,7 @@ describe('Sidebar folder authorization', () => {
     )
     expect(html).toContain('恢复“brain-hub”')
     expect(html).toContain('plan.md')
+    expect(html).toContain('aria-selected="true"')
+    expect(html).toContain('搜索文件')
   })
 })
