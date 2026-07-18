@@ -8,8 +8,9 @@ import { DEMO_TREE, getDemoDocument } from './lib/demo'
 import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from './lib/filesystem'
 import { applyReaderTitle } from './lib/documentMetadata'
 import { translate, type MessageKey } from './lib/i18n'
-import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
+import { localDirectoryName, localPathFromUrl, localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
 import { renderMarkdown } from './lib/markdown'
+import { saveLocalNavigationState, type LocalNavigationState } from './lib/navigationState'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
 import { relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
 import { getRootHandles, loadLastPath, loadSettings, saveLastPath, saveRootHandle, saveSettings } from './lib/storage'
@@ -21,9 +22,30 @@ const isDemo = searchParams.has('demo')
 type AppProps = {
   initialFile?: CapturedMarkdownFile
   initialSettings?: Settings
+  initialNavigationState?: LocalNavigationState | null
 }
 
-export default function App({ initialFile, initialSettings }: AppProps) {
+async function readExpandedLocalTree(
+  sourceUrl: string,
+  rootUrl: string,
+  showHidden: boolean,
+  expandedPaths: Iterable<string>,
+  onProgress?: (tree: TreeNode[]) => void,
+): Promise<TreeNode[]> {
+  let nextTree = await readLocalDirectory(sourceUrl, rootUrl, '', showHidden, rootUrl)
+  onProgress?.(nextTree)
+  const paths = [...expandedPaths].sort((left, right) => left.split('/').length - right.split('/').length)
+  for (const path of paths) {
+    const directory = findNode(nextTree, path)
+    if (!directory || directory.kind !== 'directory' || directory.loaded !== false || !directory.url) continue
+    const children = await readLocalDirectory(sourceUrl, directory.url, path, showHidden, rootUrl)
+    nextTree = replaceDirectoryChildren(nextTree, path, children)
+    onProgress?.(nextTree)
+  }
+  return nextTree
+}
+
+export default function App({ initialFile, initialSettings, initialNavigationState }: AppProps) {
   const [settings, setSettings] = useState<Settings>(() => initialSettings ?? loadSettings())
   const [rootHandle, setRootHandle] = useState<FileSystemDirectoryHandle>()
   const [localRootUrl, setLocalRootUrl] = useState<string>()
@@ -37,6 +59,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
   const [headings, setHeadings] = useState<Heading[]>([])
   const [tab, setTab] = useState<'files' | 'outline'>('files')
   const [query, setQuery] = useState('')
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(initialNavigationState?.expandedPaths ?? []))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showSettings, setShowSettings] = useState(false)
@@ -65,10 +88,19 @@ export default function App({ initialFile, initialSettings }: AppProps) {
         const sourceUrl = indexed?.url
           ?? (path === singleDocument?.path ? singleSource.sourceUrl : localUrlForPath(localRootUrl, path))
         if (!sourceUrl) throw new Error(message('fileNotFound', { path }))
+        if (sourceUrl !== currentDocument?.sourceUrl) {
+          await saveLocalNavigationState({
+            rootUrl: localRootUrl,
+            targetUrl: sourceUrl,
+            expandedPaths: [...expandedPaths],
+          })
+          window.location.assign(sourceUrl)
+          return
+        }
         next = {
           path,
           name: indexed?.name ?? path.split('/').at(-1) ?? path,
-          markdown: await readLocalMarkdown(singleSource.sourceUrl, sourceUrl),
+          markdown: await readLocalMarkdown(singleSource.sourceUrl, sourceUrl, localRootUrl),
           lastModified: Date.now(),
           sourceUrl,
         }
@@ -94,7 +126,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     } finally {
       setLoading(false)
     }
-  }, [fileMap, localRootUrl, message, rootHandle, singleDocument, singleSource])
+  }, [currentDocument?.sourceUrl, expandedPaths, fileMap, localRootUrl, message, rootHandle, singleDocument, singleSource])
 
   const loadDirectory = useCallback(async (handle: FileSystemDirectoryHandle, preferredPath?: string) => {
     setLoading(true)
@@ -181,7 +213,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
       return
     }
     if (localRootUrl && singleSource) {
-      const refreshedTree = await readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', showHiddenRef.current)
+      const refreshedTree = await readExpandedLocalTree(singleSource.sourceUrl, localRootUrl, showHiddenRef.current, expandedPaths)
       setTree(refreshedTree)
       if (currentDocument) await openPath(currentDocument.path)
       return
@@ -194,30 +226,36 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     const currentPath = currentDocument?.path
     await loadDirectory(rootHandle)
     if (currentPath) await openPath(currentPath)
-  }, [chooseFolder, currentDocument, loadDirectory, localRootUrl, openPath, rootHandle, singleDocument, singleSource])
+  }, [chooseFolder, currentDocument, expandedPaths, loadDirectory, localRootUrl, openPath, rootHandle, singleDocument, singleSource])
 
   useEffect(() => {
     if (isDemo || !initialFile) return
     let active = true
     Promise.resolve(initialFile).then(async (captured) => {
       if (!active) return
-      const next = toLoadedDocument(captured)
-      const directoryUrl = parentDirectoryUrl(captured.sourceUrl)
+      const restoredRootUrl = initialNavigationState?.rootUrl ?? parentDirectoryUrl(captured.sourceUrl)
+      const next = {
+        ...toLoadedDocument(captured),
+        path: localPathFromUrl(restoredRootUrl, captured.sourceUrl) ?? captured.name,
+      }
       const rendered = await renderMarkdown(next.markdown)
       if (!active) return
       setSingleSource(captured)
       setSingleDocument(next)
-      setRootName(captured.parentName)
-      setLocalRootUrl(undefined)
+      setRootName(localDirectoryName(restoredRootUrl))
+      setLocalRootUrl(restoredRootUrl)
       setTree([{ kind: 'file', name: next.name, path: next.path, url: captured.sourceUrl }])
       setCurrentDocument(next)
       setHtml(rendered.html)
       setHeadings(rendered.headings)
       try {
-        const localTree = await readLocalDirectory(captured.sourceUrl, directoryUrl, '', showHiddenRef.current)
-        if (!active) return
-        setLocalRootUrl(directoryUrl)
-        setTree(localTree)
+        await readExpandedLocalTree(
+          captured.sourceUrl,
+          restoredRootUrl,
+          showHiddenRef.current,
+          initialNavigationState?.expandedPaths ?? [],
+          (localTree) => { if (active) setTree(localTree) },
+        )
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : message('readFolderFailed'))
       }
@@ -225,7 +263,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
       if (active) setError(message('cannotReadSingle'))
     })
     return () => { active = false }
-  }, [initialFile, message])
+  }, [initialFile, initialNavigationState, message])
 
   useEffect(() => {
     if (isDemo || initialFile) return
@@ -252,7 +290,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     if (!singleSource || !localRootUrl) return
     setError('')
     try {
-      const children = await readLocalDirectory(singleSource.sourceUrl, url, path, showHiddenRef.current)
+      const children = await readLocalDirectory(singleSource.sourceUrl, url, path, showHiddenRef.current, localRootUrl)
       setTree((current) => replaceDirectoryChildren(current, path, children))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : message('readFolderFailed'))
@@ -282,11 +320,11 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     previousShowHidden.current = settings.showHidden
     if (rootHandle) void loadDirectory(rootHandle)
     else if (localRootUrl && singleSource) {
-      void readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', settings.showHidden)
+      void readExpandedLocalTree(singleSource.sourceUrl, localRootUrl, settings.showHidden, expandedPaths)
         .then(setTree)
         .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : message('readFolderFailed')))
     }
-  }, [loadDirectory, localRootUrl, message, rootHandle, settings.showHidden, singleSource])
+  }, [expandedPaths, loadDirectory, localRootUrl, message, rootHandle, settings.showHidden, singleSource])
 
   useEffect(() => {
     if (!settings.autoRefresh || !currentDocument) return
@@ -296,7 +334,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
         if (refreshing) return
         refreshing = true
         try {
-          const markdown = await readLocalMarkdown(singleSource.sourceUrl, currentDocument.sourceUrl!)
+          const markdown = await readLocalMarkdown(singleSource.sourceUrl, currentDocument.sourceUrl!, localRootUrl)
           if (markdown !== currentDocument.markdown) {
             const rendered = await renderMarkdown(markdown)
             setCurrentDocument((document) => {
@@ -319,7 +357,7 @@ export default function App({ initialFile, initialSettings }: AppProps) {
       } catch { /* permission changes are surfaced on manual refresh */ }
     }, 1500)
     return () => window.clearInterval(timer)
-  }, [currentDocument, openPath, rootHandle, settings.autoRefresh, singleSource])
+  }, [currentDocument, localRootUrl, openPath, rootHandle, settings.autoRefresh, singleSource])
 
   useEffect(() => {
     function keydown(event: KeyboardEvent) {
@@ -337,6 +375,15 @@ export default function App({ initialFile, initialSettings }: AppProps) {
     setTab(nextTab)
   }, [])
 
+  const changeDirectoryExpanded = useCallback((path: string, expanded: boolean) => {
+    setExpandedPaths((current) => {
+      const next = new Set(current)
+      if (expanded) next.add(path)
+      else next.delete(path)
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     const move = (event: PointerEvent) => {
       if (!resizing.current) return
@@ -350,13 +397,13 @@ export default function App({ initialFile, initialSettings }: AppProps) {
 
   return (
     <div className="app-shell" data-theme={settings.theme} style={{ '--sidebar-width': `${settings.sidebarWidth}px` } as React.CSSProperties}>
-      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(initialFile && !rootHandle && !localRootUrl)} showFolderAction={!initialFile} restoreFolderName={pendingDirectories[0]?.handle.name} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onExpandDirectory={expandLocalDirectory} onChooseFolder={chooseFolder} onRestoreFolder={restoreSavedFolder} />
+      <Sidebar rootName={rootName} tree={tree} activePath={currentDocument?.path ?? ''} headings={headings} tab={tab} query={query} language={settings.language} singleFileMode={Boolean(initialFile && !rootHandle && !localRootUrl)} showFolderAction={!initialFile} restoreFolderName={pendingDirectories[0]?.handle.name} expandedPaths={expandedPaths} onTabChange={changeTab} onQueryChange={setQuery} onOpen={openPath} onExpandDirectory={expandLocalDirectory} onDirectoryExpandedChange={changeDirectoryExpanded} onChooseFolder={chooseFolder} onRestoreFolder={restoreSavedFolder} />
       <div className="resize-handle" onPointerDown={() => { resizing.current = true; globalThis.document.body.classList.add('is-resizing') }} />
       <section className="workspace">
         <TopBar rootName={rootName} path={currentDocument?.path ?? ''} theme={settings.theme} language={settings.language} loading={loading} onThemeToggle={() => setSettings((current) => ({ ...current, theme: current.theme === 'dark' ? 'light' : 'dark' }))} onRefresh={refresh} onSettings={() => setShowSettings(true)} />
         {pendingDirectories.length && !rootHandle ? <button className="permission-banner" onClick={restoreSavedFolder}><FolderOpen size={17} /> {message('restoreFolderPersistent', { name: pendingDirectories[0].handle.name })}</button> : null}
         {error ? <div className="error-banner"><AlertCircle size={17} /> <span>{error}</span><button onClick={() => setError('')}>{message('close')}</button></div> : null}
-        <Reader document={currentDocument} html={html} rootHandle={rootHandle} localSourceUrl={singleSource?.sourceUrl} fontSize={settings.fontSize} language={settings.language} onOpenPath={openPath} />
+        <Reader document={currentDocument} html={html} rootHandle={rootHandle} localSourceUrl={singleSource?.sourceUrl} localRootUrl={localRootUrl} fontSize={settings.fontSize} language={settings.language} onOpenPath={openPath} />
       </section>
       {showSettings ? <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} /> : null}
     </div>

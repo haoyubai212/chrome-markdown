@@ -6,6 +6,7 @@ import appStyles from './styles/app.css?inline'
 import App from './App'
 import { captureMarkdownDocument } from './lib/contentSource'
 import { applyReaderTitle, installReaderFavicon } from './lib/documentMetadata'
+import { loadLocalNavigationState } from './lib/navigationState'
 import { loadPersistedSettings } from './lib/storage'
 
 function revealDocument() {
@@ -46,11 +47,13 @@ async function mountReader() {
   document.body.append(root)
 
   const initialSettings = await loadPersistedSettings()
+  const initialNavigationState = await loadLocalNavigationState()
   createRoot(root).render(
     <StrictMode>
       <App
         initialFile={initialFile}
         initialSettings={initialSettings}
+        initialNavigationState={initialNavigationState}
       />
     </StrictMode>,
   )

@@ -11,6 +11,7 @@ type SidebarProps = {
   tab: 'files' | 'outline'
   query: string
   language: Language
+  expandedPaths: ReadonlySet<string>
   singleFileMode: boolean
   showFolderAction: boolean
   restoreFolderName?: string
@@ -18,12 +19,13 @@ type SidebarProps = {
   onQueryChange: (query: string) => void
   onOpen: (path: string) => void
   onExpandDirectory: (path: string, url: string) => Promise<void>
+  onDirectoryExpandedChange: (path: string, expanded: boolean) => void
   onChooseFolder: () => void
   onRestoreFolder: () => void
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { rootName, tree, activePath, headings, tab, query, language, singleFileMode, showFolderAction, restoreFolderName, onTabChange, onQueryChange, onOpen, onExpandDirectory, onChooseFolder, onRestoreFolder } = props
+  const { rootName, tree, activePath, headings, tab, query, language, expandedPaths, singleFileMode, showFolderAction, restoreFolderName, onTabChange, onQueryChange, onOpen, onExpandDirectory, onDirectoryExpandedChange, onChooseFolder, onRestoreFolder } = props
   const folderAction = restoreFolderName ? onRestoreFolder : onChooseFolder
   const folderActionLabel = restoreFolderName
     ? translate(language, 'restoreFolderShort', { name: restoreFolderName })
@@ -53,7 +55,7 @@ export function Sidebar(props: SidebarProps) {
           tree.length ? (
             <>
               <div className="root-label"><FolderTree size={15} /> <span>{rootName}</span></div>
-              <FileTree nodes={tree} activePath={activePath} query={query} language={language} onOpen={onOpen} onExpandDirectory={onExpandDirectory} />
+              <FileTree nodes={tree} activePath={activePath} query={query} language={language} expandedPaths={expandedPaths} onOpen={onOpen} onExpandDirectory={onExpandDirectory} onDirectoryExpandedChange={onDirectoryExpandedChange} />
             </>
           ) : (
             <div className="sidebar-empty">

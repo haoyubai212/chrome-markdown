@@ -5,6 +5,7 @@ import { captureMarkdownDocument } from '../src/lib/contentSource'
 
 const fileHandlerSource = readFileSync(resolve('public/file-handler.js'), 'utf8')
 const contentEntrySource = readFileSync(resolve('src/content.tsx'), 'utf8')
+const appSource = readFileSync(resolve('src/App.tsx'), 'utf8')
 const manifest = JSON.parse(readFileSync(resolve('public/manifest.json'), 'utf8')) as {
   content_scripts: Array<{ js: string[]; run_at: string }>
   web_accessible_resources: Array<{ resources: string[] }>
@@ -29,11 +30,12 @@ describe('local file content entry', () => {
     expect(captured?.markdown).toBe('# Note')
   })
 
-  it('loads the React content entry without redirecting or session handoff', () => {
+  it('loads the React content entry directly and uses real file navigation for tree changes', () => {
     expect(fileHandlerSource).toContain("import(chrome.runtime.getURL('content.js'))")
     expect(fileHandlerSource).not.toContain('sendMessage')
     expect(fileHandlerSource).not.toContain('location.href =')
-    expect(contentEntrySource).not.toContain('location.assign')
+    expect(contentEntrySource).toContain('loadLocalNavigationState')
+    expect(appSource).toContain('window.location.assign(sourceUrl)')
     expect(manifest.content_scripts[0].js).toEqual(['file-handler.js'])
     expect(manifest.content_scripts[0].run_at).toBe('document_start')
     expect(manifest.web_accessible_resources[0].resources).toContain('content.js')

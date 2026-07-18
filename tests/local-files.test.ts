@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isAllowedLocalTarget, localUrlForPath, parentDirectoryUrl, parseChromeDirectoryIndex, readLocalDirectory, replaceDirectoryChildren } from '../src/lib/localFiles'
+import { isAllowedLocalTarget, localDirectoryName, localPathFromUrl, localUrlForPath, parentDirectoryUrl, parseChromeDirectoryIndex, readLocalDirectory, replaceDirectoryChildren } from '../src/lib/localFiles'
 import type { TreeNode } from '../src/types'
 
 const directoryHtml = `
@@ -20,6 +20,8 @@ describe('local file URL directory bridge', () => {
     expect(parentDirectoryUrl('file:///Users/test/project/docs/plan.md')).toBe('file:///Users/test/project/docs/')
     expect(localUrlForPath('file:///Users/test/project/docs/', 'guides/getting started.md'))
       .toBe('file:///Users/test/project/docs/guides/getting%20started.md')
+    expect(localPathFromUrl('file:///Users/test/project/', 'file:///Users/test/project/docs/plan.md')).toBe('docs/plan.md')
+    expect(localDirectoryName('file:///Users/test/project/')).toBe('project')
   })
 
   it('allows only the opened file parent directory, descendants, and Markdown files', () => {
@@ -29,6 +31,7 @@ describe('local file URL directory bridge', () => {
     expect(isAllowedLocalTarget(source, 'file:///Users/test/project/docs/guides/intro.md', 'markdown')).toBe(true)
     expect(isAllowedLocalTarget(source, 'file:///Users/test/project/docs/images/cover.png', 'asset')).toBe(true)
     expect(isAllowedLocalTarget(source, 'file:///Users/test/project/', 'directory')).toBe(false)
+    expect(isAllowedLocalTarget(source, 'file:///Users/test/project/', 'directory', 'file:///Users/test/project/')).toBe(true)
     expect(isAllowedLocalTarget(source, 'file:///Users/test/project/docs/secret.txt', 'markdown')).toBe(false)
     expect(isAllowedLocalTarget(source, 'https://example.com/plan.md', 'markdown')).toBe(false)
   })
