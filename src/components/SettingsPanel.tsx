@@ -24,7 +24,6 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
         </label>
         <label className="toggle-row"><span>自动刷新当前文件</span><input type="checkbox" checked={settings.autoRefresh} onChange={(event) => onChange({ ...settings, autoRefresh: event.target.checked })} /></label>
         <label className="toggle-row"><span>显示隐藏目录</span><input type="checkbox" checked={settings.showHidden} onChange={(event) => onChange({ ...settings, showHidden: event.target.checked })} /></label>
-        <p className="privacy-note">只读权限。目录句柄保存在浏览器本地 IndexedDB 中；应用不包含远程 API。</p>
       </section>
     </div>
   )

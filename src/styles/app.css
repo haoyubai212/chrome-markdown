@@ -164,7 +164,6 @@ body.is-resizing { cursor: col-resize; user-select: none; }
 .breadcrumbs > span { overflow: hidden; text-overflow: ellipsis; }
 .crumb::before { content: "/"; padding: 0 8px; color: color-mix(in srgb, var(--muted), transparent 45%); }
 .topbar-actions { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; }
-.local-badge { display: flex; align-items: center; gap: 6px; margin-right: 8px; color: var(--green); font-size: 12px; font-weight: 650; }
 .icon-button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; }
 .icon-button:hover { color: var(--text); background: var(--surface-strong); }
 .is-spinning { animation: spin .8s linear infinite; }
@@ -226,10 +225,8 @@ body.is-resizing { cursor: col-resize; user-select: none; }
 .settings-panel input[type="range"] { accent-color: var(--blue); }
 .settings-panel .toggle-row { display: flex; align-items: center; justify-content: space-between; }
 .settings-panel input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--blue); }
-.privacy-note { margin: 12px 0 0; padding: 11px 12px; border-radius: 7px; color: var(--muted); background: var(--surface); font-size: 12px; line-height: 1.55; }
 
 @media (max-width: 760px) {
   .app-shell { --sidebar-width: 270px !important; }
-  .local-badge { display: none; }
   .markdown-body { width: calc(100% - 40px); padding-top: 36px; }
 }

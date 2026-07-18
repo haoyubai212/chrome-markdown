@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Local MD Reader</title>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="#3b82f6"/>
+  <path fill="#ffffff" d="M64 356V156h54l58 64 58-64h54v200h-58V247l-54 58-54-58v109H64Z"/>
+  <path fill="#ffffff" d="M348 156h62v112h58l-89 100-89-100h58V156Z"/>
+</svg>

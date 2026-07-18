@@ -1,4 +1,4 @@
-import { CheckCircle2, Moon, RefreshCw, Settings as SettingsIcon, Sun } from 'lucide-react'
+import { Moon, RefreshCw, Settings as SettingsIcon, Sun } from 'lucide-react'
 import type { Theme } from '../types'
 
 type TopBarProps = {
@@ -20,7 +20,6 @@ export function TopBar({ rootName, path, theme, loading, onThemeToggle, onRefres
         {crumbs.map((crumb) => <span key={`${path}-${crumb}`} className="crumb">{crumb}</span>)}
       </div>
       <div className="topbar-actions">
-        <span className="local-badge"><CheckCircle2 size={14} /> 完全本地</span>
         <button className="icon-button" onClick={onThemeToggle} title="切换主题" aria-label="切换主题">
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
