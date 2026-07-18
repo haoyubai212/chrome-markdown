@@ -6,8 +6,9 @@ import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { DEMO_TREE, getDemoDocument } from './lib/demo'
 import { buildTree, ensureReadPermission, readDocument, resolveFileHandle } from './lib/filesystem'
+import { applyReaderTitle } from './lib/documentMetadata'
 import { translate, type MessageKey } from './lib/i18n'
-import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalDirectoryTree, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
+import { localUrlForPath, parentDirectoryUrl, readLocalDirectory, readLocalMarkdown, replaceDirectoryChildren } from './lib/localFiles'
 import { renderMarkdown } from './lib/markdown'
 import { findNode, flattenFiles, isMarkdownFile, normalizePath } from './lib/paths'
 import { relativePathFromSource, toLoadedDocument, type CapturedMarkdownFile } from './lib/singleFile'
@@ -20,10 +21,9 @@ const isDemo = searchParams.has('demo')
 type AppProps = {
   initialFile?: CapturedMarkdownFile
   initialSettings?: Settings
-  navigateToLocalFile?: (url: string) => void
 }
 
-export default function App({ initialFile, initialSettings, navigateToLocalFile }: AppProps) {
+export default function App({ initialFile, initialSettings }: AppProps) {
   const [settings, setSettings] = useState<Settings>(() => initialSettings ?? loadSettings())
   const [rootHandle, setRootHandle] = useState<FileSystemDirectoryHandle>()
   const [localRootUrl, setLocalRootUrl] = useState<string>()
@@ -65,10 +65,6 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
         const sourceUrl = indexed?.url
           ?? (path === singleDocument?.path ? singleSource.sourceUrl : localUrlForPath(localRootUrl, path))
         if (!sourceUrl) throw new Error(message('fileNotFound', { path }))
-        if (navigateToLocalFile && sourceUrl !== singleSource.sourceUrl) {
-          navigateToLocalFile(sourceUrl)
-          return
-        }
         next = {
           path,
           name: indexed?.name ?? path.split('/').at(-1) ?? path,
@@ -98,7 +94,7 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
     } finally {
       setLoading(false)
     }
-  }, [fileMap, localRootUrl, message, navigateToLocalFile, rootHandle, singleDocument, singleSource])
+  }, [fileMap, localRootUrl, message, rootHandle, singleDocument, singleSource])
 
   const loadDirectory = useCallback(async (handle: FileSystemDirectoryHandle, preferredPath?: string) => {
     setLoading(true)
@@ -185,7 +181,7 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
       return
     }
     if (localRootUrl && singleSource) {
-      const refreshedTree = await readLocalDirectoryTree(singleSource.sourceUrl, localRootUrl, showHiddenRef.current)
+      const refreshedTree = await readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', showHiddenRef.current)
       setTree(refreshedTree)
       if (currentDocument) await openPath(currentDocument.path)
       return
@@ -217,10 +213,14 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
       setCurrentDocument(next)
       setHtml(rendered.html)
       setHeadings(rendered.headings)
-      const localTree = await readLocalDirectoryTree(captured.sourceUrl, directoryUrl, showHiddenRef.current).catch(() => null)
-      if (!active || !localTree) return
-      setLocalRootUrl(directoryUrl)
-      setTree(localTree)
+      try {
+        const localTree = await readLocalDirectory(captured.sourceUrl, directoryUrl, '', showHiddenRef.current)
+        if (!active) return
+        setLocalRootUrl(directoryUrl)
+        setTree(localTree)
+      } catch (caught) {
+        if (active) setError(caught instanceof Error ? caught.message : message('readFolderFailed'))
+      }
     }).catch(() => {
       if (active) setError(message('cannotReadSingle'))
     })
@@ -274,11 +274,15 @@ export default function App({ initialFile, initialSettings, navigateToLocalFile 
   }, [settings])
 
   useEffect(() => {
+    applyReaderTitle(document, currentDocument?.name)
+  }, [currentDocument?.name])
+
+  useEffect(() => {
     if (previousShowHidden.current === settings.showHidden) return
     previousShowHidden.current = settings.showHidden
     if (rootHandle) void loadDirectory(rootHandle)
     else if (localRootUrl && singleSource) {
-      void readLocalDirectoryTree(singleSource.sourceUrl, localRootUrl, settings.showHidden)
+      void readLocalDirectory(singleSource.sourceUrl, localRootUrl, '', settings.showHidden)
         .then(setTree)
         .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : message('readFolderFailed')))
     }

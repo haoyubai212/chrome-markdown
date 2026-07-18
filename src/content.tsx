@@ -5,13 +5,27 @@ import katexStyles from 'katex/dist/katex.min.css?inline'
 import appStyles from './styles/app.css?inline'
 import App from './App'
 import { captureMarkdownDocument } from './lib/contentSource'
+import { applyReaderTitle, installReaderFavicon } from './lib/documentMetadata'
 import { loadPersistedSettings } from './lib/storage'
+
+function revealDocument() {
+  document.documentElement.style.visibility = ''
+}
 
 async function mountReader() {
   const initialFile = captureMarkdownDocument(location.href, document)
-  if (!initialFile) return
+  if (!initialFile) {
+    revealDocument()
+    return
+  }
 
-  if (document.getElementById('root')) return
+  if (document.getElementById('root')) {
+    revealDocument()
+    return
+  }
+
+  installReaderFavicon(document, chrome.runtime.getURL('icons/icon-32.png'))
+  applyReaderTitle(document, initialFile.name)
 
   const style = document.createElement('style')
   style.dataset.localMdReader = 'styles'
@@ -37,10 +51,10 @@ async function mountReader() {
       <App
         initialFile={initialFile}
         initialSettings={initialSettings}
-        navigateToLocalFile={(url) => location.assign(url)}
       />
     </StrictMode>,
   )
+  requestAnimationFrame(revealDocument)
 }
 
-void mountReader()
+void mountReader().catch(revealDocument)

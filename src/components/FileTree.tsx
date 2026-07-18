@@ -27,7 +27,7 @@ function TreeItem({ node, depth, activePath, query, onOpen, onExpandDirectory }:
   onExpandDirectory: (path: string, url: string) => Promise<void>
 }) {
   const matches = containsMatch(node, query)
-  const [expanded, setExpanded] = useState(depth < 1)
+  const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   if (!matches) return null
 

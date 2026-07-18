@@ -5,8 +5,14 @@
   if (document.documentElement.dataset.localMdReaderHandled === 'true') return
 
   document.documentElement.dataset.localMdReaderHandled = 'true'
+  document.documentElement.style.visibility = 'hidden'
 
-  import(chrome.runtime.getURL('content.js')).catch(() => {
-    delete document.documentElement.dataset.localMdReaderHandled
-  })
+  const loadReader = () => {
+    import(chrome.runtime.getURL('content.js')).catch(() => {
+      delete document.documentElement.dataset.localMdReaderHandled
+      document.documentElement.style.visibility = ''
+    })
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadReader, { once: true })
+  else loadReader()
 })()

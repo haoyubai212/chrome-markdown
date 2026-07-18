@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isAllowedLocalTarget, localUrlForPath, parentDirectoryUrl, parseChromeDirectoryIndex, readLocalDirectory, readLocalDirectoryTree, replaceDirectoryChildren } from '../src/lib/localFiles'
+import { isAllowedLocalTarget, localUrlForPath, parentDirectoryUrl, parseChromeDirectoryIndex, readLocalDirectory, replaceDirectoryChildren } from '../src/lib/localFiles'
 import type { TreeNode } from '../src/types'
 
 const directoryHtml = `
   <script>
     addRow("Parent Directory", "../", 1, 0, "", 0, "");
-    addRow("guides", "guides/", 1, 0, "", 1700000000, "");
+    addRow("guides", "guides", 1, 0, "", 1700000000, "");
     addRow("node_modules", "node_modules/", 1, 0, "", 1700000000, "");
     addRow(".private.md", ".private.md", 0, 12, "12 B", 1700000000, "");
     addRow("plan.md", "plan.md", 0, 42, "42 B", 1700000000, "");
@@ -58,39 +58,6 @@ describe('local file URL directory bridge', () => {
         kind: 'directory',
       },
     })
-  })
-
-  it('recursively indexes Markdown files and removes empty directory branches', async () => {
-    const childHtml = `
-      <script>
-        addRow("deep", "deep/", 1, 0, "", 1700000000, "");
-        addRow("intro.md", "intro.md", 0, 42, "42 B", 1700000000, "");
-      </script>
-    `
-    const emptyHtml = '<script>addRow("notes.txt", "notes.txt", 0, 18, "18 B", 1700000000, "");</script>'
-    const sendMessage = vi.fn().mockImplementation(({ payload }: { payload: { targetUrl: string } }) => {
-      const html = payload.targetUrl.endsWith('/guides/')
-        ? childHtml
-        : payload.targetUrl.endsWith('/guides/deep/') ? emptyHtml : directoryHtml
-      return Promise.resolve({ ok: true, text: html })
-    })
-    vi.stubGlobal('chrome', { runtime: { sendMessage } })
-    const tree = await readLocalDirectoryTree(
-      'file:///Users/test/project/docs/plan.md',
-      'file:///Users/test/project/docs/',
-    )
-    expect(tree).toEqual([
-      {
-        kind: 'directory',
-        name: 'guides',
-        path: 'guides',
-        url: 'file:///Users/test/project/docs/guides/',
-        loaded: true,
-        children: [{ kind: 'file', name: 'intro.md', path: 'guides/intro.md', url: 'file:///Users/test/project/docs/guides/intro.md' }],
-      },
-      { kind: 'file', name: 'plan.md', path: 'plan.md', url: 'file:///Users/test/project/docs/plan.md' },
-    ])
-    expect(sendMessage).toHaveBeenCalledTimes(3)
   })
 
   it('fills a lazy directory without rebuilding untouched branches', () => {
