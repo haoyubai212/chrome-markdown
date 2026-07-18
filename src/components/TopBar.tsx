@@ -1,10 +1,13 @@
-import { Moon, RefreshCw, Settings as SettingsIcon, Sun } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Copy, Moon, RefreshCw, Settings as SettingsIcon, Sun } from 'lucide-react'
+import { copyText } from '../lib/clipboard'
 import { translate } from '../lib/i18n'
 import type { Language, Theme } from '../types'
 
 type TopBarProps = {
   rootName: string
   path: string
+  sourceUrl?: string
   theme: Theme
   language: Language
   loading: boolean
@@ -13,13 +16,33 @@ type TopBarProps = {
   onSettings: () => void
 }
 
-export function TopBar({ rootName, path, theme, language, loading, onThemeToggle, onRefresh, onSettings }: TopBarProps) {
+export function TopBar({ rootName, path, sourceUrl, theme, language, loading, onThemeToggle, onRefresh, onSettings }: TopBarProps) {
   const crumbs = path.split('/').filter(Boolean)
+  const [copied, setCopied] = useState(false)
+  const resetTimer = useRef<number | undefined>(undefined)
+
+  useEffect(() => () => window.clearTimeout(resetTimer.current), [])
+
+  async function copyCurrentFileAddress() {
+    if (!sourceUrl || !await copyText(sourceUrl)) return
+    setCopied(true)
+    window.clearTimeout(resetTimer.current)
+    resetTimer.current = window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  const copyLabel = translate(language, copied ? 'fileAddressCopied' : 'copyFileAddress')
   return (
     <header className="topbar">
-      <div className="breadcrumbs" title={path}>
-        <span>{rootName || 'Local MD Reader'}</span>
-        {crumbs.map((crumb) => <span key={`${path}-${crumb}`} className="crumb">{crumb}</span>)}
+      <div className="topbar-location">
+        <div className="breadcrumbs" title={sourceUrl || path}>
+          <span>{rootName || 'Local MD Reader'}</span>
+          {crumbs.map((crumb) => <span key={`${path}-${crumb}`} className="crumb">{crumb}</span>)}
+        </div>
+        {sourceUrl ? (
+          <button className={`copy-address-button${copied ? ' is-copied' : ''}`} type="button" onClick={copyCurrentFileAddress} title={copyLabel} aria-label={copyLabel}>
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+          </button>
+        ) : null}
       </div>
       <div className="topbar-actions">
         <button className="icon-button" onClick={onThemeToggle} title={translate(language, 'switchTheme')} aria-label={translate(language, 'switchTheme')}>

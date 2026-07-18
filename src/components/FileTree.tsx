@@ -8,10 +8,8 @@ type FileTreeProps = {
   activePath: string
   query: string
   language: Language
-  expandedPaths: ReadonlySet<string>
   onOpen: (path: string) => void
   onExpandDirectory: (path: string, url: string) => Promise<void>
-  onDirectoryExpandedChange: (path: string, expanded: boolean) => void
 }
 
 function containsMatch(node: TreeNode, query: string): boolean {
@@ -20,17 +18,16 @@ function containsMatch(node: TreeNode, query: string): boolean {
   return node.kind === 'directory' && node.children.some((child) => containsMatch(child, query))
 }
 
-function TreeItem({ node, depth, activePath, query, expandedPaths, onOpen, onExpandDirectory, onDirectoryExpandedChange }: {
+function TreeItem({ node, depth, activePath, query, onOpen, onExpandDirectory }: {
   node: TreeNode
   depth: number
   activePath: string
   query: string
-  expandedPaths: ReadonlySet<string>
   onOpen: (path: string) => void
   onExpandDirectory: (path: string, url: string) => Promise<void>
-  onDirectoryExpandedChange: (path: string, expanded: boolean) => void
 }) {
   const matches = containsMatch(node, query)
+  const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   if (!matches) return null
 
@@ -49,11 +46,10 @@ function TreeItem({ node, depth, activePath, query, expandedPaths, onOpen, onExp
   }
 
   const directory = node
-  const expanded = expandedPaths.has(directory.path)
   const isExpanded = query ? true : expanded
   async function toggleDirectory() {
     const nextExpanded = !expanded
-    onDirectoryExpandedChange(directory.path, nextExpanded)
+    setExpanded(nextExpanded)
     if (!nextExpanded || directory.loaded !== false || !directory.url) return
     setLoading(true)
     try {
@@ -76,17 +72,17 @@ function TreeItem({ node, depth, activePath, query, expandedPaths, onOpen, onExp
         <span>{directory.name}{loading ? '…' : ''}</span>
       </button>
       {isExpanded ? (
-        <div>{directory.children.map((child) => <TreeItem key={child.path} node={child} depth={depth + 1} activePath={activePath} query={query} expandedPaths={expandedPaths} onOpen={onOpen} onExpandDirectory={onExpandDirectory} onDirectoryExpandedChange={onDirectoryExpandedChange} />)}</div>
+        <div>{directory.children.map((child) => <TreeItem key={child.path} node={child} depth={depth + 1} activePath={activePath} query={query} onOpen={onOpen} onExpandDirectory={onExpandDirectory} />)}</div>
       ) : null}
     </div>
   )
 }
 
-export function FileTree({ nodes, activePath, query, language, expandedPaths, onOpen, onExpandDirectory, onDirectoryExpandedChange }: FileTreeProps) {
+export function FileTree({ nodes, activePath, query, language, onOpen, onExpandDirectory }: FileTreeProps) {
   const normalizedQuery = useMemo(() => query.trim().toLowerCase(), [query])
   return (
     <nav className="file-tree" aria-label={translate(language, 'markdownFiles')}>
-      {nodes.map((node) => <TreeItem key={node.path || node.name} node={node} depth={0} activePath={activePath} query={normalizedQuery} expandedPaths={expandedPaths} onOpen={onOpen} onExpandDirectory={onExpandDirectory} onDirectoryExpandedChange={onDirectoryExpandedChange} />)}
+      {nodes.map((node) => <TreeItem key={node.path || node.name} node={node} depth={0} activePath={activePath} query={normalizedQuery} onOpen={onOpen} onExpandDirectory={onExpandDirectory} />)}
     </nav>
   )
 }

@@ -11,9 +11,8 @@
 - YAML Frontmatter 属性卡片（数组值自动显示为标签，且不污染文档大纲）
 - 相对 Markdown 链接和本地图片
 - Chrome 直接打开本地 `.md/.markdown/.mdx` 文件时自动进入单文件阅读模式
-- 地址栏始终保留真实的 `file:///.../README.md`，书签、刷新和相对链接行为与普通本地文件一致
-- 从侧栏切换 Markdown 时导航到目标的真实 `file://` 地址；`document_start` 提前隐藏原始文本，React 挂载后再显示，避免切换时闪出未渲染内容
-- 导航前仅在 `chrome.storage.session` 保存当前标签页的目录根和展开路径；新页面恢复原目录树与展开状态，不在存储中中转 Markdown 内容
+- 浏览器地址栏保留最初打开文件的真实 `file://` 地址；从侧栏切换 Markdown 时只在当前页面替换正文，不触发整页导航或闪烁
+- 内部路径栏始终显示当前文档，并提供复制按钮，一键复制当前文件的完整 `file://` 地址
 - 默认显示文件目录；需要时可随时切换到文档大纲
 - 文件变化自动刷新、浅色/深色双选按钮、字号和侧栏宽度设置
 - 中文 / English 界面切换
@@ -39,13 +38,13 @@ npm run dev          # 打开 http://127.0.0.1:5173/reader.html?demo=1
 npm run lint
 npm test
 npm run build
-npm run package      # 生成 local-md-reader-0.3.5.zip
+npm run package      # 生成 local-md-reader-0.3.6.zip
 ```
 
 ## 隐私与安全边界
 
 - 只读取用户在 Chrome 中主动打开的 Markdown 所在父目录及其子目录；或用户在独立阅读页中明确选择的目录。
-- 直接打开单个本地 Markdown 时，Content Script 在当前 `file://` 页面挂载普通 React 根节点；不跳转内部扩展页。`storage.session` 只保存当前标签页的目录 UI 状态，不中转文件内容。
+- 直接打开单个本地 Markdown 时，Content Script 在当前 `file://` 页面挂载普通 React 根节点；不跳转内部扩展页，也不使用存储中转文件内容。
 - 不写入文件，不上传内容，不加载远程脚本，不发送遥测。
 - 扩展不包含远程 API；CSP 只允许扩展自身及本地 `file:` 读取。外部链接只有在用户主动点击后才交给新标签页。
 - `.git`、`node_modules`、`dist`、`build` 默认永远忽略；其他隐藏目录默认隐藏，可在设置中显示。

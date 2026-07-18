@@ -10,7 +10,6 @@ type ReaderProps = {
   html: string
   rootHandle?: FileSystemDirectoryHandle
   localSourceUrl?: string
-  localRootUrl?: string
   fontSize: number
   language: Language
   onOpenPath: (path: string) => void
@@ -18,7 +17,7 @@ type ReaderProps = {
 
 let mermaidInitialized = false
 
-export function Reader({ document, html, rootHandle, localSourceUrl, localRootUrl, fontSize, language, onOpenPath }: ReaderProps) {
+export function Reader({ document, html, rootHandle, localSourceUrl, fontSize, language, onOpenPath }: ReaderProps) {
   const articleRef = useRef<HTMLElement>(null)
   const [renderError, setRenderError] = useState('')
 
@@ -39,7 +38,7 @@ export function Reader({ document, html, rootHandle, localSourceUrl, localRootUr
           url = await readAssetUrl(rootHandle, resolved, objectUrls)
         } else if (localSourceUrl && document!.sourceUrl) {
           const targetUrl = new URL(source, document!.sourceUrl).href
-          if (isAllowedLocalTarget(localSourceUrl, targetUrl, 'asset', localRootUrl)) url = await readLocalAsset(localSourceUrl, targetUrl, localRootUrl)
+          if (isAllowedLocalTarget(localSourceUrl, targetUrl, 'asset')) url = await readLocalAsset(localSourceUrl, targetUrl)
         }
         if (!cancelled && url) image.src = url
       }))
@@ -65,7 +64,7 @@ export function Reader({ document, html, rootHandle, localSourceUrl, localRootUr
       cancelled = true
       objectUrls.forEach((url) => URL.revokeObjectURL(url))
     }
-  }, [document, html, language, localRootUrl, localSourceUrl, rootHandle])
+  }, [document, html, language, localSourceUrl, rootHandle])
 
   function handleClick(event: React.MouseEvent<HTMLElement>) {
     const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a')

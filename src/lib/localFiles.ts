@@ -42,35 +42,13 @@ export function localUrlForPath(rootUrl: string, path: string): string | null {
   }
 }
 
-export function localPathFromUrl(rootUrl: string, targetUrl: string): string | null {
-  try {
-    const root = new URL(rootUrl)
-    const target = new URL(targetUrl)
-    if (root.protocol !== 'file:' || target.protocol !== 'file:' || root.host !== target.host || !root.pathname.endsWith('/')) return null
-    if (!target.href.startsWith(root.href) || target.pathname.endsWith('/')) return null
-    return normalizePath(target.pathname.slice(root.pathname.length).split('/').map(decodeURIComponent).join('/')) || null
-  } catch {
-    return null
-  }
-}
-
-export function localDirectoryName(directoryUrl: string): string {
-  try {
-    const segments = new URL(directoryUrl).pathname.split('/').filter(Boolean)
-    return decodeURIComponent(segments.at(-1) || '') || '本地文件'
-  } catch {
-    return '本地文件'
-  }
-}
-
-export function isAllowedLocalTarget(sourceUrl: string, targetUrl: string, kind: LocalReadKind, rootUrl?: string): boolean {
+export function isAllowedLocalTarget(sourceUrl: string, targetUrl: string, kind: LocalReadKind): boolean {
   try {
     const source = new URL(sourceUrl)
     const target = new URL(targetUrl)
     if (source.protocol !== 'file:' || target.protocol !== 'file:' || source.host !== target.host) return false
     if (source.pathname.endsWith('/') || source.search || source.hash || target.search || target.hash) return false
-    const root = rootUrl ? new URL(rootUrl).href : parentDirectoryUrl(source.href)
-    if (!root.endsWith('/') || !source.href.startsWith(root)) return false
+    const root = parentDirectoryUrl(source.href)
     if (!target.href.startsWith(root)) return false
     if (kind === 'directory') return target.pathname.endsWith('/')
     if (target.pathname.endsWith('/')) return false
@@ -127,11 +105,11 @@ export function replaceDirectoryChildren(nodes: TreeNode[], path: string, childr
   return changed ? nextNodes : nodes
 }
 
-async function readLocalUrl(sourceUrl: string, targetUrl: string, kind: LocalReadKind, rootUrl?: string): Promise<string> {
+async function readLocalUrl(sourceUrl: string, targetUrl: string, kind: LocalReadKind): Promise<string> {
   if (!globalThis.chrome?.runtime?.sendMessage) throw new Error('Local file bridge is unavailable')
   const response = await chrome.runtime.sendMessage({
     type: 'READ_LOCAL_URL',
-    payload: { sourceUrl, targetUrl, kind, ...(rootUrl ? { rootUrl } : {}) },
+    payload: { sourceUrl, targetUrl, kind },
   }) as LocalReadResponse
   if (!response?.ok || typeof response.text !== 'string') throw new Error(response?.error || 'Could not read local file')
   return response.text
@@ -142,21 +120,20 @@ export async function readLocalDirectory(
   directoryUrl: string,
   parentPath = '',
   showHidden = false,
-  rootUrl?: string,
 ): Promise<TreeNode[]> {
-  const html = await readLocalUrl(sourceUrl, directoryUrl, 'directory', rootUrl)
+  const html = await readLocalUrl(sourceUrl, directoryUrl, 'directory')
   return parseChromeDirectoryIndex(html, directoryUrl, parentPath, showHidden)
 }
 
-export function readLocalMarkdown(sourceUrl: string, targetUrl: string, rootUrl?: string): Promise<string> {
-  return readLocalUrl(sourceUrl, targetUrl, 'markdown', rootUrl)
+export function readLocalMarkdown(sourceUrl: string, targetUrl: string): Promise<string> {
+  return readLocalUrl(sourceUrl, targetUrl, 'markdown')
 }
 
-export async function readLocalAsset(sourceUrl: string, targetUrl: string, rootUrl?: string): Promise<string> {
+export async function readLocalAsset(sourceUrl: string, targetUrl: string): Promise<string> {
   if (!globalThis.chrome?.runtime?.sendMessage) throw new Error('Local file bridge is unavailable')
   const response = await chrome.runtime.sendMessage({
     type: 'READ_LOCAL_URL',
-    payload: { sourceUrl, targetUrl, kind: 'asset', ...(rootUrl ? { rootUrl } : {}) },
+    payload: { sourceUrl, targetUrl, kind: 'asset' },
   }) as LocalReadResponse
   if (!response?.ok || typeof response.dataUrl !== 'string') throw new Error(response?.error || 'Could not read local asset')
   return response.dataUrl
