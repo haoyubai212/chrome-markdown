@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run --environment jsdom",
     "test:watch": "vitest --environment jsdom",
-    "package": "npm run build && cd dist && zip -qr ../chrome-markdown-1.0.1.zip ."
+    "package": "npm run build && mkdir -p releases && cd dist && zip -qr ../releases/chrome-markdown-1.0.1.zip ."
   },
   "dependencies": {
     "dompurify": "^3.3.0",
